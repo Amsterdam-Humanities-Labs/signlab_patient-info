@@ -1,0 +1,32 @@
+# Large data files
+odwn/odwn_orbn_gwg-LMF_1.3.xml
+*.xml.gz
+
+# Database files
+*.db
+*.sqlite
+
+# Temporary files
+*.tmp
+*.temp
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.env
+db_credentials.py
+db_credentials.php
+__pycache__/
+*.pyc

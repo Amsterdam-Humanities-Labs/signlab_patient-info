@@ -1,0 +1,2232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contents</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #dee2e6;
+    }
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    tr:hover {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+    .search-container {
+      display: flex;
+      margin-bottom: 1rem;
+    }
+    .search-input {
+      flex: 1;
+      padding: 0.5rem 1rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+    }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+    .pagination button {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ced4da;
+      background-color: white;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .pagination button:hover {
+      background-color: #f1f3f5;
+    }
+    .pagination button.active {
+      background-color: #339af0;
+      color: white;
+      border-color: #339af0;
+    }
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 300px;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left: 4px solid #339af0;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .url-link {
+      color: #339af0;
+      text-decoration: none;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 250px;
+    }
+    .url-link:hover {
+      text-decoration: underline;
+    }
+    .text-preview {
+      max-width: 350px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .panel {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 1px solid #e9ecef;
+      margin-bottom: 1.5rem;
+    }
+    .expand-btn {
+      cursor: pointer;
+      color: #339af0;
+      background: none;
+      border: none;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.875rem;
+    }
+    .expand-btn:hover {
+      text-decoration: underline;
+    }
+    .label-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      margin-right: 5px;
+      margin-bottom: 5px;
+      border-radius: 12px;
+      background-color: #6c757d;
+      color: white;
+      font-size: 0.75rem;
+    }
+    .sort-header {
+      cursor: pointer;
+    }
+    .sort-header:hover {
+      background-color: #e9ecef;
+    }
+    .sort-icon {
+      display: inline-block;
+      margin-left: 5px;
+      font-size: 0.75rem;
+    }
+    .priority-low {
+      background-color: #28a745;
+    }
+    .priority-medium {
+      background-color: #ffc107;
+      color: #212529;
+    }
+    .priority-high {
+      background-color: #dc3545;
+    }
+    .priority-none {
+      background-color: #6c757d;
+    }
+    /* Add style for text with preserved newlines */
+    .preserve-newlines {
+      white-space: pre-wrap;
+      font-family: monospace;
+      background-color: #f8f9fa;
+      padding: 1rem;
+      border-radius: 4px;
+      border: 1px solid #dee2e6;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .text-preview {
+      max-width: 350px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    /* Add styles for glossary section */
+    .glossary-section {
+      margin-top: 20px;
+      border-top: 1px solid #dee2e6;
+      padding-top: 20px;
+    }
+    .glossary-table {
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    .glossary-table th, .glossary-table td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .glossary-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      background-color: #f8f9fa;
+    }
+    .glossary-form input, .glossary-form textarea {
+      padding: 8px;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+    }
+    .glossary-form textarea {
+      min-height: 80px;
+    }
+    .glossary-form button {
+      padding: 8px 12px;
+      background-color: #339af0;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .glossary-form button:hover {
+      background-color: #228be6;
+    }
+    .glossary-actions {
+      display: flex;
+      gap: 5px;
+    }
+    .edit-btn, .delete-btn {
+      padding: 4px 8px;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .edit-btn:hover {
+      background-color: #e9ecef;
+    }
+    .delete-btn:hover {
+      background-color: #ffcdd2;
+    }
+    .glossary-section h3 {
+      margin-bottom: 15px;
+    }
+    .no-entries-message {
+      font-style: italic;
+      color: #6c757d;
+      padding: 10px 0;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>hh_index Contents</h1>
+  </div>
+   
+  <div class="navbar">
+    <a href="index.html">Dashboard</a>
+    <a href="contents.html">View Contents</a>
+    <a href="words.html">View Words Statistics</a>
+    <a href="sentences.html">View Sentences Statistics</a>
+    <a href="begrippenlijst.html">Begrippenlijst</a>
+    <a href="listVideos.html">Video Selector</a>
+
+  </div>
+  <div id="contents-table"></div>
+ 
+</div>
+
+<script type="module">
+  import React, { useState, useEffect, useCallback } from 'https://esm.sh/react@18.2.0';
+  import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+  import VideoDrawer from './VideoDrawer.js';
+  
+  function GlossaryManager({ contentId }) {
+    const [entries, setEntries] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [warning, setWarning] = useState(null); // New state for warnings
+    const [isNewGlos, setIsNewGlos] = useState(false); // Track if entered glos is new
+    const [selectedThema, setSelectedThema] = useState(''); // Selected thema for new glosses
+    const [themas, setThemas] = useState([]); // Store available themas
+    const [searchResults, setSearchResults] = useState([]); // Store search results for dropdown
+    
+    const [newEntry, setNewEntry] = useState({ glos: '', text: '' });
+    const [editingEntry, setEditingEntry] = useState(null);
+    
+    // New state variables for definition locking and bulk import
+    const [isDefinitionLocked, setIsDefinitionLocked] = useState(false);
+    const [glosCheckTimeout, setGlosCheckTimeout] = useState(null);
+    const [bulkText, setBulkText] = useState('');
+    const [bulkLoading, setBulkLoading] = useState(false);
+    const [bulkFeedback, setBulkFeedback] = useState(null);
+
+    // Memoize the fetch entries function to use in useEffect
+    const fetchEntries = useCallback(() => {
+      if (!contentId) return;
+      
+      setLoading(true);
+      fetch(`api.php?action=get_glossary&content_id=${contentId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            setError(data.error);
+          } else {
+            setEntries(data.entries || []);
+            setError(null);
+          }
+          setLoading(false);
+        })
+        .catch(err => {
+          setError('Failed to load glossary entries');
+          setLoading(false);
+        });
+    }, [contentId]);
+
+    // Initial fetch of entries
+    useEffect(() => {
+      fetchEntries();
+    }, [fetchEntries]);
+
+    // Fetch themas when component mounts
+    useEffect(() => {
+      fetch('/hh/api.php?action=get_themas')
+        .then(response => response.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            setThemas(data);
+            // Set default thema if available
+            if (data.length > 0) {
+              setSelectedThema(data[0]);
+            }
+          }
+        })
+        .catch(err => console.error('Failed to fetch themas:', err));
+    }, []);
+    
+    // Debounced check for glos existence and definition
+    const debouncedCheckGlos = useCallback((glosValue) => {
+      clearTimeout(glosCheckTimeout);
+      
+      if (!glosValue || glosValue.trim() === '') {
+        setIsNewGlos(false);
+        setWarning(null);
+        setSearchResults([]);
+        setIsDefinitionLocked(false);
+        setNewEntry(prev => ({ ...prev, text: '' }));
+        return;
+      }
+      
+      const timeoutId = setTimeout(async () => {
+        try {
+          // First check if term exists in Signbank
+          const searchResponse = await fetch(`/hh/getGlosses.php?action=search&term=${encodeURIComponent(glosValue)}`);
+          const searchData = await searchResponse.json();
+          const existsInSignbank = searchData.results && searchData.results.length > 0;
+          
+          if (existsInSignbank) {
+            setSearchResults(searchData.results);
+            setIsNewGlos(false);
+            setWarning(null);
+          } else {
+            setSearchResults([]);
+            setIsNewGlos(true);
+            setWarning(`"${glosValue}" will be added as a new term in the Signbank database. Please select a thema.`);
+          }
+          
+          // Now check if it exists in our glossary and get the definition
+          const defResponse = await fetch(`api.php?action=get_glossary_definition&glos=${encodeURIComponent(glosValue)}`);
+          const defData = await defResponse.json();
+          
+          if (defData.definition) {
+            // Term exists in glossary, use its definition
+            setNewEntry(prev => ({ ...prev, text: defData.definition }));
+            setIsDefinitionLocked(true);
+            // Override warning if it was previously set
+            setWarning(`"${glosValue}" already exists in Begrippenlijst. The definition will be used automatically.`);
+          } else {
+            // Term doesn't exist in glossary (but might exist in Signbank)
+            if (!existsInSignbank) {
+              // It's a completely new term, let user enter definition
+              setIsDefinitionLocked(false);
+            }
+            // If we didn't find a definition but the term might exist elsewhere, leave text field as is
+          }
+        } catch (error) {
+          console.error('Failed to check term:', error);
+          setIsDefinitionLocked(false);
+        }
+      }, 500);
+      
+      setGlosCheckTimeout(timeoutId);
+    }, [glosCheckTimeout]);
+    
+    const handleInputChange = (e, isEditForm = false) => {
+      const { name, value } = e.target;
+      
+      if (isEditForm) {
+        setEditingEntry(prev => ({ ...prev, [name]: value }));
+      } else {
+        setNewEntry(prev => ({ ...prev, [name]: value }));
+        
+        // When glos field changes, check if it exists
+        if (name === 'glos') {
+          debouncedCheckGlos(value);
+        }
+        
+        // If user changes text while it's locked (shouldn't happen, but just in case)
+        if (name === 'text' && isDefinitionLocked) {
+          setIsDefinitionLocked(false);
+        }
+      }
+    };
+    
+    // Check if a glos exists in form_data
+    const checkIfGlosExists = async (glos) => {
+      if (!glos || glos.trim() === '') {
+        setIsNewGlos(false);
+        setWarning(null);
+        setSearchResults([]);
+        return;
+      }
+      
+      try {
+        // Use getGlosses.php to search for the glos
+        const response = await fetch(`/hh/getGlosses.php?action=search&term=${encodeURIComponent(glos)}`);
+        const data = await response.json();
+        console.log(data)
+        
+        if (data.error) {
+          console.error('Error checking glos:', data.error);
+          setIsNewGlos(true);
+          setWarning(null);
+          setSearchResults([]);
+        } else {
+          const exists = data.results && data.results.length > 0;
+          setIsNewGlos(!exists);
+          
+          // Store search results for dropdown
+          if (exists) {
+            setSearchResults(data.results);
+            setWarning(null);
+          } else {
+            setSearchResults([]);
+            setWarning(`"${glos}" will be added as a new term in the Signbank database. Please select a thema.`);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to check glos:', error);
+        setIsNewGlos(true);
+        setWarning(null);
+        setSearchResults([]);
+      }
+    };
+    
+    const selectGlosFromDropdown = (glos) => {
+      setNewEntry(prev => ({
+        ...prev,
+        glos: glos
+      }));
+      setSearchResults([]);
+      setIsNewGlos(false);
+    };
+    
+    const handleAddEntry = async (e) => {
+      e.preventDefault();
+      
+      if (!newEntry.glos.trim() || !newEntry.text.trim()) {
+        setError('Both term and definition are required');
+        return;
+      }
+      
+      // If it's a new glos and no thema is selected
+      if (isNewGlos && !selectedThema) {
+        setError('Please select a thema for the new glossary term');
+        return;
+      }
+      
+      setLoading(true);
+      
+      try {
+        // Convert the glossary term to uppercase before adding
+        const uppercaseGlos = newEntry.glos.trim().toUpperCase();
+        
+        // First, add to hh_index_glos
+        const glossaryResponse = await fetch('api.php?action=add_glossary_entry', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            content_id: contentId,
+            glos: uppercaseGlos,
+            text: newEntry.text
+          })
+        });
+        
+        const glossaryData = await glossaryResponse.json();
+        
+        if (glossaryData.error) {
+          setError(glossaryData.error);
+          setLoading(false);
+          return;
+        }
+        
+        // If it's a new glos, also add to form_data via addLemmaToThema
+        if (isNewGlos) {
+          // Import the function from VideoDrawer.js
+          // Since we can't directly import it, we need to reconstruct the functionality
+          const formData = new FormData();
+          formData.append('wordList', uppercaseGlos); // Use uppercase version
+          formData.append('thema', selectedThema);
+          formData.append('userId', '6'); // Default user ID
+          formData.append('checkDuplicatesWithSuffix', 'true');
+          formData.append('labels', JSON.stringify(['TYDbase', 'HealthHolland']));
+          console.log("formData", formData);
+
+          const formDataResponse = await fetch('https://signcollect.nl/batch_add.php', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const formDataResult = await formDataResponse.json();
+          
+          if (formDataResult.error || (formDataResult.errors && formDataResult.errors.length > 0)) {
+            const errorMsg = formDataResult.error || formDataResult.errors.join(', ');
+            setError(`Failed to add term to Signbank: ${errorMsg}`);
+            // Still add to the glossary list even if form_data add fails
+          } else if (formDataResult.success && formDataResult.success.length > 0) {
+            // If added with a different name (suffix), show in the warning message
+            const addedWord = formDataResult.success[0];
+            if (addedWord !== newEntry.glos) {
+              setWarning(`Term was added to Signbank as "${addedWord}" due to naming conventions.`);
+            } else {
+              setWarning(null);
+            }
+          }
+        }
+        
+        // Update the glossary entries list
+        setEntries(prev => [...prev, { 
+          id: glossaryData.id, 
+          glos: glossaryData.glos, 
+          text: glossaryData.text 
+        }]);
+        
+        // Reset form and state
+        setNewEntry({ glos: '', text: '' });
+        setIsNewGlos(false);
+        setError(null);
+      } catch (err) {
+        setError('Failed to add glossary entry: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    const handleEdit = (entry) => {
+      setEditingEntry(entry);
+    };
+    
+    const handleSaveEdit = (e) => {
+      e.preventDefault();
+      
+      if (!editingEntry.glos.trim() || !editingEntry.text.trim()) {
+        setError('Both term and definition are required');
+        return;
+      }
+      
+      setLoading(true);
+      fetch('api.php?action=update_glossary_entry', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          id: editingEntry.id,
+          glos: editingEntry.glos,
+          text: editingEntry.text
+        })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            setError(data.error);
+          } else {
+            setEntries(prev => prev.map(entry => 
+              entry.id === editingEntry.id ? { 
+                ...entry, 
+                glos: data.glos, 
+                text: data.text 
+              } : entry
+            ));
+            setEditingEntry(null);
+            setError(null);
+          }
+          setLoading(false);
+        })
+        .catch(err => {
+          setError('Failed to update glossary entry');
+          setLoading(false);
+        });
+    };
+    
+    const handleCancelEdit = () => {
+      setEditingEntry(null);
+    };
+    
+    const handleDelete = (id) => {
+      if (!confirm('Are you sure you want to delete this glossary entry?')) {
+        return;
+      }
+      
+      setLoading(true);
+      fetch('api.php?action=delete_glossary_entry', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id })
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            setError(data.error);
+          } else {
+            setEntries(prev => prev.filter(entry => entry.id !== id));
+            setError(null);
+          }
+          setLoading(false);
+        })
+        .catch(err => {
+          setError('Failed to delete glossary entry');
+          setLoading(false);
+        });
+    };
+    
+    const renderEntries = () => {
+      if (entries.length === 0) {
+        return React.createElement(
+          'div', 
+          { className: 'no-entries-message' }, 
+          'No glossary entries yet. Add one below.'
+        );
+      }
+      
+      return React.createElement(
+        'table',
+        { className: 'glossary-table' },
+        React.createElement(
+          'thead',
+          null,
+          React.createElement(
+            'tr',
+            null,
+            React.createElement('th', null, 'Term'),
+            React.createElement('th', null, 'Definition'),
+            React.createElement('th', null, 'Actions')
+          )
+        ),
+        React.createElement(
+          'tbody',
+          null,
+          entries.map(entry => React.createElement(
+            'tr',
+            { key: entry.id },
+            React.createElement('td', null, entry.glos),
+            React.createElement('td', null, entry.text),
+            React.createElement(
+              'td',
+              null,
+              React.createElement(
+                'div',
+                { className: 'glossary-actions' },
+                React.createElement(
+                  'button',
+                  { 
+                    className: 'edit-btn',
+                    onClick: () => handleEdit(entry)
+                  },
+                  'Edit'
+                ),
+                React.createElement(
+                  'button',
+                  { 
+                    className: 'delete-btn',
+                    onClick: () => handleDelete(entry.id)
+                  },
+                  'Delete'
+                )
+              )
+            )
+          ))
+        )
+      );
+    };
+    
+    const renderEditForm = () => {
+      if (!editingEntry) return null;
+      
+      return React.createElement(
+        'form',
+        { 
+          className: 'glossary-form',
+          onSubmit: handleSaveEdit
+        },
+        React.createElement('h4', null, 'Edit Glossary Entry'),
+        React.createElement(
+          'input',
+          {
+            type: 'text',
+            name: 'glos',
+            placeholder: 'Term',
+            value: editingEntry.glos,
+            onChange: (e) => handleInputChange(e, true),
+            required: true
+          }
+        ),
+        React.createElement(
+          'textarea',
+          {
+            name: 'text',
+            placeholder: 'Definition',
+            value: editingEntry.text,
+            onChange: (e) => handleInputChange(e, true),
+            required: true
+          }
+        ),
+        React.createElement(
+          'div',
+          { style: { display: 'flex', gap: '10px' } },
+          React.createElement(
+            'button',
+            { type: 'submit' },
+            'Save Changes'
+          ),
+          React.createElement(
+            'button',
+            { 
+              type: 'button',
+              onClick: handleCancelEdit,
+              style: { backgroundColor: '#6c757d' }
+            },
+            'Cancel'
+          )
+        )
+      );
+    };
+    
+    // Render dropdown for search results
+    const renderGlosDropdown = () => {
+      if (searchResults.length === 0) return null;
+      
+      return React.createElement(
+        'div',
+        {
+          style: {
+            position: 'relative', 
+            zIndex: 10
+          }
+        },
+        React.createElement(
+          'ul',
+          {
+            style: {
+              position: 'absolute',
+              top: '0',
+              left: '0',
+              right: '0',
+              maxHeight: '200px',
+              overflowY: 'auto',
+              backgroundColor: 'white',
+              border: '1px solid #ced4da',
+              borderTop: 'none',
+              borderRadius: '0 0 4px 4px',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              padding: '0',
+              margin: '0',
+              listStyle: 'none'
+            }
+          },
+          searchResults.map((result, index) => 
+            React.createElement(
+              'li',
+              {
+                key: index,
+                onClick: () => selectGlosFromDropdown(result.glos),
+                style: {
+                  padding: '8px 12px',
+                  cursor: 'pointer',
+                  borderBottom: index < searchResults.length - 1 ? '1px solid #eee' : 'none',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                },
+                onMouseEnter: (e) => {
+                  e.target.style.backgroundColor = '#f8f9fa';
+                },
+                onMouseLeave: (e) => {
+                  e.target.style.backgroundColor = 'transparent';
+                }
+              },
+              React.createElement('span', null, result.glos),
+              result.sense && React.createElement(
+                'span', 
+                { style: { color: '#6c757d', fontSize: '0.85em' } },
+                Object.values(result.sense)[0]
+              )
+            )
+          )
+        )
+      );
+    };
+    
+    // New bulk import handler
+    const handleBulkImport = async () => {
+      if (!bulkText.trim()) {
+        setBulkFeedback({ type: 'error', message: 'Please enter some terms to import.' });
+        return;
+      }
+      
+      if (!selectedThema) {
+        setBulkFeedback({ type: 'error', message: 'Please select a thema for any new terms.' });
+        return;
+      }
+      
+      setBulkLoading(true);
+      setBulkFeedback(null);
+      
+      try {
+        const response = await fetch('api.php?action=bulk_add_glossary_entries', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content_id: contentId,
+            bulk_text: bulkText,
+            thema: selectedThema
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (result.error) {
+          throw new Error(result.error);
+        }
+        
+        // Format a nice summary message
+        let message = `Processed: ${result.processed || 0} terms\n`;
+        message += `- Added new terms: ${result.added_new || 0}\n`;
+        message += `- Linked existing terms: ${result.linked_existing || 0}\n`;
+        
+        if (result.signbank_added && result.signbank_added.length > 0) {
+          message += `- Added to Signbank: ${result.signbank_added.join(', ')}\n`;
+        }
+        
+        if (result.errors && result.errors.length > 0) {
+          message += `\nErrors:\n${result.errors.join('\n')}\n`;
+        }
+        
+        if (result.signbank_errors && result.signbank_errors.length > 0) {
+          message += `\nSignbank errors:\n${result.signbank_errors.join('\n')}\n`;
+        }
+        
+        setBulkFeedback({ type: 'success', message });
+        setBulkText(''); // Clear the textarea
+        fetchEntries(); // Refresh the glossary list
+      } catch (error) {
+        setBulkFeedback({ type: 'error', message: error.message });
+      } finally {
+        setBulkLoading(false);
+      }
+    };
+
+    return React.createElement(
+      'div',
+      { className: 'glossary-section' },
+      React.createElement('h3', null, 'Begrippenlijst'),
+      
+      error && React.createElement(
+        'div',
+        { style: { color: 'red', marginBottom: '10px' } },
+        error
+      ),
+      
+      warning && React.createElement(
+        'div',
+        { style: { 
+          color: '#856404', 
+          backgroundColor: '#fff3cd', 
+          padding: '10px', 
+          borderRadius: '4px', 
+          marginBottom: '10px',
+          border: '1px solid #ffeeba'
+        } },
+        warning
+      ),
+      
+      loading ? 
+        React.createElement('div', null, 'Loading...') : 
+        renderEntries(),
+      
+      editingEntry ? 
+        renderEditForm() :
+        React.createElement(
+          'form',
+          { 
+            className: 'glossary-form',
+            onSubmit: handleAddEntry
+          },
+          React.createElement('h4', null, 'Add New Glossary Entry'),
+          React.createElement(
+            'div',
+            { style: { position: 'relative' } },
+            React.createElement(
+              'input',
+              {
+                type: 'text',
+                name: 'glos',
+                placeholder: 'Term',
+                value: newEntry.glos,
+                onChange: handleInputChange,
+                required: true,
+                autocomplete: 'off' // Add autocomplete="off" to disable browser suggestions
+              }
+            ),
+            renderGlosDropdown()
+          ),
+          React.createElement(
+            'textarea',
+            {
+              name: 'text',
+              placeholder: 'Definition',
+              value: newEntry.text,
+              onChange: handleInputChange,
+              required: true,
+              disabled: isDefinitionLocked,
+              style: isDefinitionLocked ? { backgroundColor: '#e9ecef', cursor: 'not-allowed' } : {}
+            }
+          ),
+          // Show thema dropdown if it's a new glos
+          isNewGlos && React.createElement(
+            'div',
+            { style: { marginBottom: '10px' } },
+            React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Select Thema for Signbank:'),
+            React.createElement(
+              'select',
+              {
+                value: selectedThema,
+                onChange: (e) => setSelectedThema(e.target.value),
+                required: isNewGlos,
+                style: { width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }
+              },
+              React.createElement('option', { value: '' }, 'Select a thema...'),
+              themas.map((thema, idx) => React.createElement('option', { key: idx, value: thema }, thema))
+            )
+          ),
+          React.createElement(
+            'button',
+            { type: 'submit' },
+            'Add Entry'
+          )
+        ),
+        
+      // Add bulk import section
+      React.createElement(
+        'div', { 
+          style: { 
+            marginTop: '20px', 
+            padding: '15px', 
+            backgroundColor: '#f8f9fa', 
+            borderRadius: '4px' 
+          } 
+        },
+        React.createElement('h4', null, 'Bulk Import Entries'),
+        React.createElement('p', { style: { fontSize: '0.9em', color: '#6c757d' } }, 
+          'Enter one entry per line, format: Term, Definition'
+        ),
+        React.createElement('textarea', {
+          placeholder: 'Example:\nZwanger, Dit is zwanger\nInnemen, We nemen in',
+          value: bulkText,
+          onChange: (e) => setBulkText(e.target.value),
+          style: { 
+            width: '100%', 
+            minHeight: '100px', 
+            padding: '8px', 
+            marginBottom: '10px', 
+            borderRadius: '4px',
+            border: '1px solid #ced4da'
+          },
+          disabled: bulkLoading
+        }),
+        
+        // Thema selection for bulk import
+        React.createElement(
+          'div', { style: { marginBottom: '10px' } },
+          React.createElement('label', { style: { display: 'block', marginBottom: '5px' } }, 'Thema for new Signbank terms:'),
+          React.createElement(
+            'select', {
+              value: selectedThema,
+              onChange: (e) => setSelectedThema(e.target.value),
+              required: true,
+              style: { width: '100%', padding: '8px', border: '1px solid #ced4da', borderRadius: '4px' }
+            },
+            React.createElement('option', { value: '' }, 'Select a thema...'),
+            themas.map((thema, idx) => React.createElement('option', { key: idx, value: thema }, thema))
+          )
+        ),
+        
+        React.createElement('button', {
+          onClick: handleBulkImport,
+          disabled: bulkLoading || !selectedThema,
+          style: { 
+            padding: '8px 12px', 
+            backgroundColor: '#17a2b8', 
+            color: 'white', 
+            border: 'none', 
+            borderRadius: '4px',
+            cursor: bulkLoading || !selectedThema ? 'not-allowed' : 'pointer'
+          }
+        }, bulkLoading ? 'Importing...' : 'Import Bulk List'),
+        
+        // Feedback display
+        bulkFeedback && React.createElement(
+          'div', { 
+            style: { 
+              marginTop: '10px',
+              padding: '10px',
+              borderRadius: '4px',
+              backgroundColor: bulkFeedback.type === 'success' ? '#d4edda' : '#f8d7da',
+              color: bulkFeedback.type === 'success' ? '#155724' : '#721c24',
+              border: bulkFeedback.type === 'success' ? '1px solid #c3e6cb' : '1px solid #f5c6cb'
+            } 
+          },
+          React.createElement('pre', { style: { margin: 0, whiteSpace: 'pre-wrap' } }, bulkFeedback.message)
+        )
+      )
+    );
+  }
+  
+  function ExtendedVideoDrawer(props) {
+    const [activeTab, setActiveTab] = useState('ngt');
+    const [ngtTexts, setNgtTexts] = useState({
+      ngt_text: '',
+      ngt_text2: '',
+      ngt_text3: '',
+      ngt_text4: ''
+    });
+    const [contentLoaded, setContentLoaded] = useState(false);
+    
+    // Fetch all NGT texts when component mounts
+    useEffect(() => {
+      if (props.contentId && !contentLoaded) {
+        fetch(`api.php?action=get_content_ngt_text&id=${props.contentId}`)
+          .then(response => response.json())
+          .then(data => {
+            if (!data.error) {
+              setNgtTexts({
+                ngt_text: data.ngt_text || '',
+                ngt_text2: data.ngt_text2 || '',
+                ngt_text3: data.ngt_text3 || '',
+                ngt_text4: data.ngt_text4 || ''
+              });
+              setContentLoaded(true);
+            }
+          })
+          .catch(error => {
+            console.error('Failed to fetch NGT texts:', error);
+          });
+      }
+    }, [props.contentId, contentLoaded]);
+    
+    // Use our CustomVideoDrawer instead of the imported VideoDrawer
+    const customDrawerProps = {
+      ...props,
+      ngtTexts: ngtTexts,
+      onNgtTextsChange: (newTexts) => {
+        setNgtTexts(newTexts);
+      }
+    };
+    
+    // Create either our custom drawer or the GlossaryManager based on active tab
+    const drawerContent = activeTab === 'ngt' 
+      ? React.createElement(CustomVideoDrawer, customDrawerProps)
+      : React.createElement(GlossaryManager, { contentId: props.contentId });
+    
+    return React.createElement(
+      'div',
+      { style: { padding: '20px' } },
+      React.createElement(
+        'div',
+        { 
+          style: { 
+            borderBottom: '1px solid #dee2e6',
+            marginBottom: '20px',
+            display: 'flex',
+            gap: '10px'
+          }
+        },
+        React.createElement(
+          'button',
+          {
+            onClick: () => setActiveTab('ngt'),
+            style: {
+              padding: '8px 16px',
+              background: activeTab === 'ngt' ? '#339af0' : '#f8f9fa',
+              color: activeTab === 'ngt' ? 'white' : 'black',
+              border: 'none',
+              borderRadius: '4px 4px 0 0',
+              cursor: 'pointer'
+            }
+          },
+          'NGT Text & Lemmas'
+        ),
+        React.createElement(
+          'button',
+          {
+            onClick: () => setActiveTab('glossary'),
+            style: {
+              padding: '8px 16px',
+              background: activeTab === 'glossary' ? '#339af0' : '#f8f9fa',
+              color: activeTab === 'glossary' ? 'white' : 'black',
+              border: 'none',
+              borderRadius: '4px 4px 0 0',
+              cursor: 'pointer'
+            }
+          },
+          'Begrippenlijst'
+        )
+      ),
+      
+      // Render the active tab content
+      drawerContent
+    );
+  }
+  
+  // Rename from VideoDrawer to CustomVideoDrawer to avoid conflict with imported component
+  function CustomVideoDrawer({ lemma, video, origin, isOpen, contentId, plainText, preserveNewlines, ngtTexts, onNgtTextsChange }) {
+    const [ngtText, setNgtText] = useState(ngtTexts?.ngt_text || '');
+    const [ngtText2, setNgtText2] = useState(ngtTexts?.ngt_text2 || '');
+    const [ngtText3, setNgtText3] = useState(ngtTexts?.ngt_text3 || '');
+    const [ngtText4, setNgtText4] = useState(ngtTexts?.ngt_text4 || '');
+    const [origPlainText, setOrigPlainText] = useState('');
+    const [isEditing, setIsEditing] = useState(false);
+    const [statusText, setStatusText] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [recordedVideos, setRecordedVideos] = useState([]);
+    const [showRecorder, setShowRecorder] = useState(false);
+    const [lemmas, setLemmas] = useState([]);
+    const [isLemmaLoading, setIsLemmaLoading] = useState(false);
+    const [videoStatus, setVideoStatus] = useState({});
+    const [currentNgtTabIndex, setCurrentNgtTabIndex] = useState(0); // To track which NGT text tab is active
+    
+    // Define tab names
+    const ngtTabs = ['NGT Text 1', 'NGT Text 2', 'NGT Text 3', 'NGT Text 4'];
+    
+    // Update local state when props change
+    useEffect(() => {
+      if (ngtTexts) {
+        setNgtText(ngtTexts.ngt_text || '');
+        setNgtText2(ngtTexts.ngt_text2 || '');
+        setNgtText3(ngtTexts.ngt_text3 || '');
+        setNgtText4(ngtTexts.ngt_text4 || '');
+      }
+    }, [ngtTexts]);
+    
+    // Get the content from the server
+    useEffect(() => {
+      if (contentId) {
+        setLoading(true);
+        fetch(`api.php?action=get_content_ngt_text&id=${contentId}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              console.error('Error loading content:', data.error);
+              setStatusText(`Error: ${data.error}`);
+            } else {
+              setNgtText(data.ngt_text || '');
+              setNgtText2(data.ngt_text2 || '');
+              setNgtText3(data.ngt_text3 || '');
+              setNgtText4(data.ngt_text4 || '');
+              setOrigPlainText(data.plain_text || '');
+              
+              // Update parent component state if callback is provided
+              if (onNgtTextsChange) {
+                onNgtTextsChange({
+                  ngt_text: data.ngt_text || '',
+                  ngt_text2: data.ngt_text2 || '',
+                  ngt_text3: data.ngt_text3 || '',
+                  ngt_text4: data.ngt_text4 || ''
+                });
+              }
+              
+              // Check if there are recorded videos
+              if (data.recorded_videos && data.recorded_videos.length > 0) {
+                setRecordedVideos(data.recorded_videos);
+              }
+            }
+            setLoading(false);
+          })
+          .catch(error => {
+            setStatusText(`Error: ${error.message}`);
+            setLoading(false);
+          });
+      }
+    }, [contentId]);
+    
+    // Handle save button click
+    const handleSave = () => {
+      if (contentId) {
+        setLoading(true);
+        fetch('api.php?action=update_content_ngt_text', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: contentId,
+            ngt_text: ngtText,
+            ngt_text2: ngtText2,
+            ngt_text3: ngtText3,
+            ngt_text4: ngtText4
+          }),
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.error) {
+              setStatusText(`Error: ${data.error}`);
+            } else {
+              setStatusText('NGT texts saved successfully!');
+              setIsEditing(false);
+              
+              // Update parent component state
+              if (onNgtTextsChange) {
+                onNgtTextsChange({
+                  ngt_text: ngtText,
+                  ngt_text2: ngtText2,
+                  ngt_text3: ngtText3,
+                  ngt_text4: ngtText4
+                });
+              }
+              
+              // Clear status message after 3 seconds
+              setTimeout(() => {
+                setStatusText('');
+              }, 3000);
+            }
+            setLoading(false);
+          })
+          .catch(error => {
+            setStatusText(`Error: ${error.message}`);
+            setLoading(false);
+          });
+      }
+    };
+    
+    // Handle text analysis to find lemmas when a specific NGT text changes
+    const analyzeText = () => {
+      let currentText = '';
+      
+      // Get the text based on the active tab
+      switch(currentNgtTabIndex) {
+        case 0: currentText = ngtText; break;
+        case 1: currentText = ngtText2; break;
+        case 2: currentText = ngtText3; break;
+        case 3: currentText = ngtText4; break;
+        default: currentText = ngtText;
+      }
+      
+      if (!currentText) {
+        setLemmas([]);
+        return;
+      }
+      
+      setIsLemmaLoading(true);
+      
+      fetch(`api.php?action=get_lemmas&text=${encodeURIComponent(currentText)}`)
+        .then(response => response.json())
+        .then(data => {
+          setLemmas({
+            with_sign: data.lemmas_with_sign || [],
+            without_sign: data.lemmas_without_sign || []
+          });
+          setIsLemmaLoading(false);
+        })
+        .catch(error => {
+          console.error('Error getting lemmas:', error);
+          setIsLemmaLoading(false);
+        });
+    };
+    
+    // Handle upload video button click
+    const handleStartRecording = () => {
+      setShowRecorder(true);
+    };
+    
+    // Handle when a video is recorded and uploaded
+    const handleVideoUploaded = (filename) => {
+      // Update the list of recorded videos
+      setRecordedVideos(prev => [...prev, filename]);
+      setShowRecorder(false);
+    };
+    
+    // Handle delete recorded video
+    const handleDeleteVideo = (filename) => {
+      if (!confirm('Are you sure you want to delete this video?')) return;
+      
+      fetch('api.php?action=delete_recorded_video', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: contentId,
+          filename: filename
+        }),
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.error) {
+            setStatusText(`Error: ${data.error}`);
+          } else {
+            setRecordedVideos(prev => prev.filter(v => v !== filename));
+            setStatusText('Video deleted successfully!');
+            
+            // Clear status message after 3 seconds
+            setTimeout(() => {
+              setStatusText('');
+            }, 3000);
+          }
+        })
+        .catch(error => {
+          setStatusText(`Error: ${error.message}`);
+        });
+    };
+    
+    // Check if a video exists for a lemma
+    const checkVideoExistence = async (lemma) => {
+      try {
+        const response = await fetch(`api.php?action=check_term_video&glos=${encodeURIComponent(lemma)}`);
+        const data = await response.json();
+        
+        setVideoStatus(prev => ({
+          ...prev,
+          [lemma]: data.has_video ? data.video_url : false
+        }));
+        
+        return data.has_video ? data.video_url : false;
+      } catch (error) {
+        console.error('Error checking video existence:', error);
+        return false;
+      }
+    };
+
+    // Function to format NGT text preview
+    const formatNgtTextPreview = (text) => {
+      if (!text || text.trim() === '') {
+        return '(empty)';
+      }
+      
+      // No longer need to truncate the text since we have scrolling
+      // Just add some formatting to make the text more readable
+      const words = text.split(' ');
+      let lines = [];
+      let currentLine = '';
+      const maxLineLength = 50; // Still format into reasonable line lengths
+      
+      words.forEach(word => {
+        if ((currentLine + ' ' + word).length > maxLineLength && currentLine.length > 0) {
+          lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = currentLine ? (currentLine + ' ' + word) : word;
+        }
+      });
+      
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      
+      return lines.join('\n');
+    };
+
+    return React.createElement(
+      'div',
+      { style: { 
+        padding: '20px',
+        backgroundColor: '#f8f9fa',
+        borderRadius: '8px',
+        border: '1px solid #dee2e6',
+        marginBottom: '20px' 
+      } },
+      
+      // NGT Text Tabs
+      React.createElement(
+        'div',
+        { 
+          style: { 
+            display: 'flex', 
+            borderBottom: '1px solid #dee2e6',
+            marginBottom: '15px'
+          } 
+        },
+        ngtTabs.map((tabName, index) => (
+          React.createElement(
+            'button',
+            {
+              key: `ngt-tab-${index}`,
+              onClick: () => setCurrentNgtTabIndex(index),
+              style: {
+                padding: '8px 16px',
+                background: currentNgtTabIndex === index ? '#339af0' : '#f8f9fa',
+                color: currentNgtTabIndex === index ? 'white' : 'black',
+                border: 'none',
+                borderRadius: '4px 4px 0 0',
+                cursor: 'pointer',
+                marginRight: '5px'
+              }
+            },
+            tabName
+          )
+        ))
+      ),
+      
+      // Buttons for editing and saving
+      React.createElement(
+        'div',
+        { style: { marginBottom: '15px', display: 'flex', gap: '10px' } },
+        !isEditing ? 
+          React.createElement('button', {
+            onClick: () => setIsEditing(true),
+            style: {
+              padding: '8px 16px',
+              background: '#339af0',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }
+          }, 'Edit NGT Text') :
+          React.createElement(
+            React.Fragment,
+            null,
+            React.createElement('button', {
+              onClick: handleSave,
+              disabled: loading,
+              style: {
+                padding: '8px 16px',
+                background: '#28a745',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: loading ? 'not-allowed' : 'pointer'
+              }
+            }, loading ? 'Saving...' : 'Save NGT Text'),
+            React.createElement('button', {
+              onClick: () => setIsEditing(false),
+              style: {
+                padding: '8px 16px',
+                background: '#dc3545',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }
+            }, 'Cancel')
+          ),
+        // Button to analyze text for lemmas
+        React.createElement('button', {
+          onClick: analyzeText,
+          disabled: isLemmaLoading,
+          style: {
+            padding: '8px 16px',
+            background: '#17a2b8',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: isLemmaLoading ? 'not-allowed' : 'pointer'
+          }
+        }, isLemmaLoading ? 'Analyzing...' : 'Analyze Text')
+      ),
+      
+      // Status message
+      statusText && React.createElement('div', {
+        style: {
+          padding: '10px',
+          backgroundColor: statusText.includes('Error') ? '#f8d7da' : '#d4edda',
+          color: statusText.includes('Error') ? '#721c24' : '#155724',
+          borderRadius: '4px',
+          marginBottom: '15px'
+        }
+      }, statusText),
+      
+      // Plain Text (original)
+      React.createElement('div', { style: { marginBottom: '20px' } },
+        React.createElement('h4', null, 'Original Text:'),
+        React.createElement('div', {
+          className: preserveNewlines ? 'preserve-newlines' : '',
+          style: {
+            padding: '15px',
+            backgroundColor: 'white',
+            border: '1px solid #ced4da',
+            borderRadius: '4px'
+          }
+        }, origPlainText)
+      ),
+      
+      // Display the current NGT text based on the active tab
+      React.createElement('div', { style: { marginBottom: '20px' } },
+        React.createElement('h4', null, ngtTabs[currentNgtTabIndex] + ':'),
+        isEditing ?
+          React.createElement('textarea', {
+            value: currentNgtTabIndex === 0 ? ngtText : 
+                   currentNgtTabIndex === 1 ? ngtText2 : 
+                   currentNgtTabIndex === 2 ? ngtText3 : ngtText4,
+            onChange: (e) => {
+              const newValue = e.target.value;
+              switch(currentNgtTabIndex) {
+                case 0: 
+                  setNgtText(newValue);
+                  if (onNgtTextsChange) {
+                    onNgtTextsChange({...ngtTexts, ngt_text: newValue});
+                  }
+                  break;
+                case 1: 
+                  setNgtText2(newValue);
+                  if (onNgtTextsChange) {
+                    onNgtTextsChange({...ngtTexts, ngt_text2: newValue});
+                  }
+                  break;
+                case 2: 
+                  setNgtText3(newValue);
+                  if (onNgtTextsChange) {
+                    onNgtTextsChange({...ngtTexts, ngt_text3: newValue});
+                  }
+                  break;
+                case 3: 
+                  setNgtText4(newValue);
+                  if (onNgtTextsChange) {
+                    onNgtTextsChange({...ngtTexts, ngt_text4: newValue});
+                  }
+                  break;
+              }
+            },
+            rows: 10,
+            style: {
+              width: '100%',
+              padding: '10px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontFamily: 'inherit'
+            }
+          }) :
+          React.createElement('div', {
+            className: preserveNewlines ? 'preserve-newlines' : '',
+            style: {
+              padding: '15px',
+              backgroundColor: 'white',
+              border: '1px solid #ced4da',
+              borderRadius: '4px'
+            }
+          }, currentNgtTabIndex === 0 ? ngtText : 
+              currentNgtTabIndex === 1 ? ngtText2 : 
+              currentNgtTabIndex === 2 ? ngtText3 : ngtText4)
+      ),
+      
+      // Add a summary section that shows all NGT texts at once
+      React.createElement('div', { style: { marginBottom: '20px' } },
+        React.createElement('h4', null, 'All NGT Texts Summary:'),
+        React.createElement('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' } },
+          // NGT Text 1 Summary
+          React.createElement('div', { style: { padding: '10px', border: '1px solid #dee2e6', borderRadius: '4px' } },
+            React.createElement('h5', { style: { margin: '0 0 5px 0' } }, 'NGT Text 1:'),
+            React.createElement('div', { 
+              style: { 
+                fontSize: '0.9em',
+                whiteSpace: 'pre-wrap',
+                overflow: 'auto', // Changed from 'hidden' to 'auto' to enable scrolling
+                maxHeight: '80px',
+                lineHeight: '1.5',
+                position: 'relative',
+                padding: '0 5px', // Added padding for better readability
+                backgroundColor: 'white', // Added background color for contrast
+                border: '1px solid #efefef', // Light border for the scrollable area
+                borderRadius: '3px' // Rounded corners for the scrollable area
+              } 
+            }, formatNgtTextPreview(ngtText))
+          ),
+          // NGT Text 2 Summary
+          React.createElement('div', { style: { padding: '10px', border: '1px solid #dee2e6', borderRadius: '4px' } },
+            React.createElement('h5', { style: { margin: '0 0 5px 0' } }, 'NGT Text 2:'),
+            React.createElement('div', { 
+              style: { 
+                fontSize: '0.9em',
+                whiteSpace: 'pre-wrap',
+                overflow: 'auto', // Changed from 'hidden' to 'auto' to enable scrolling
+                maxHeight: '80px',
+                lineHeight: '1.5',
+                position: 'relative',
+                padding: '0 5px',
+                backgroundColor: 'white',
+                border: '1px solid #efefef',
+                borderRadius: '3px'
+              } 
+            }, formatNgtTextPreview(ngtText2))
+          ),
+          // NGT Text 3 Summary
+          React.createElement('div', { style: { padding: '10px', border: '1px solid #dee2e6', borderRadius: '4px' } },
+            React.createElement('h5', { style: { margin: '0 0 5px 0' } }, 'NGT Text 3:'),
+            React.createElement('div', { 
+              style: { 
+                fontSize: '0.9em',
+                whiteSpace: 'pre-wrap',
+                overflow: 'auto', // Changed from 'hidden' to 'auto' to enable scrolling
+                maxHeight: '80px',
+                lineHeight: '1.5',
+                position: 'relative',
+                padding: '0 5px',
+                backgroundColor: 'white',
+                border: '1px solid #efefef',
+                borderRadius: '3px'
+              } 
+            }, formatNgtTextPreview(ngtText3))
+          ),
+          // NGT Text 4 Summary
+          React.createElement('div', { style: { padding: '10px', border: '1px solid #dee2e6', borderRadius: '4px' } },
+            React.createElement('h5', { style: { margin: '0 0 5px 0' } }, 'NGT Text 4:'),
+            React.createElement('div', { 
+              style: { 
+                fontSize: '0.9em',
+                whiteSpace: 'pre-wrap',
+                overflow: 'auto', // Changed from 'hidden' to 'auto' to enable scrolling
+                maxHeight: '80px',
+                lineHeight: '1.5',
+                position: 'relative',
+                padding: '0 5px',
+                backgroundColor: 'white',
+                border: '1px solid #efefef',
+                borderRadius: '3px'
+              } 
+            }, formatNgtTextPreview(ngtText4))
+          )
+        )
+      ),
+      
+      // Lemmas section
+      lemmas && (lemmas.with_sign || lemmas.without_sign) ? 
+        React.createElement('div', { style: { marginBottom: '20px' } },
+          React.createElement('h4', null, 'Lemmas Found:'),
+          
+          lemmas.with_sign && lemmas.with_sign.length > 0 ? 
+            React.createElement(
+              'div',
+              { style: { marginBottom: '15px' } },
+              React.createElement('h5', { style: { color: '#28a745' } }, 'With Sign:'),
+              React.createElement(
+                'div',
+                { style: { display: 'flex', flexWrap: 'wrap', gap: '10px' } },
+                lemmas.with_sign.map((item, idx) => 
+                  React.createElement(
+                    'div',
+                    { 
+                      key: idx,
+                      style: {
+                        padding: '8px',
+                        border: '1px solid #28a745',
+                        borderRadius: '4px',
+                        backgroundColor: '#d4edda',
+                        color: '#155724',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }
+                    },
+                    React.createElement('span', null, item.lemma),
+                    item.video && React.createElement(
+                      'a',
+                      { 
+                        href: item.video,
+                        target: '_blank',
+                        style: { color: '#155724' }
+                      },
+                      '🎬'
+                    )
+                  )
+                )
+              )
+            ) : null,
+            
+          lemmas.without_sign && lemmas.without_sign.length > 0 ? 
+            React.createElement(
+              'div',
+              null,
+              React.createElement('h5', { style: { color: '#dc3545' } }, 'Without Sign:'),
+              React.createElement(
+                'div',
+                { style: { display: 'flex', flexWrap: 'wrap', gap: '10px' } },
+                lemmas.without_sign.map((item, idx) => {
+                  const lemma = item.lemma;
+                  
+                  return React.createElement(
+                    'div',
+                    { 
+                      key: idx,
+                      onClick: () => checkVideoExistence(lemma),
+                      style: {
+                        padding: '8px',
+                        border: '1px solid #dc3545',
+                        borderRadius: '4px',
+                        backgroundColor: '#f8d7da',
+                        color: '#721c24',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px'
+                      }
+                    },
+                    React.createElement('span', null, lemma),
+                    videoStatus[lemma] === undefined ? 
+                      React.createElement('span', null, '❓') :
+                      videoStatus[lemma] ? 
+                        React.createElement(
+                          'a',
+                          { 
+                            href: videoStatus[lemma],
+                            target: '_blank',
+                            style: { color: '#721c24' }
+                          },
+                          '🎬'
+                        ) : 
+                        React.createElement('span', null, '❌')
+                  );
+                })
+              )
+            ) : null
+        ) : null,
+        
+      // Recorded Videos section
+      recordedVideos && recordedVideos.length > 0 ? 
+        React.createElement('div', { style: { marginBottom: '20px' } },
+          React.createElement('h4', null, 'Recorded Videos:'),
+          React.createElement(
+            'div',
+            { style: { display: 'flex', flexWrap: 'wrap', gap: '15px', marginBottom: '15px' } },
+            recordedVideos.map((filename, idx) => 
+              React.createElement(
+                'div',
+                { 
+                  key: idx,
+                  style: {
+                    position: 'relative',
+                    width: '200px'
+                  }
+                },
+                React.createElement(
+                  'video',
+                  {
+                    src: `/uploads/${filename}`,
+                    controls: true,
+                    width: '100%',
+                    style: {
+                      borderRadius: '4px'
+                    }
+                  }
+                ),
+                React.createElement(
+                  'button',
+                  {
+                    onClick: () => handleDeleteVideo(filename),
+                    style: {
+                      position: 'absolute',
+                      top: '5px',
+                      right: '5px',
+                      background: 'rgba(220, 53, 69, 0.8)',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '50%',
+                      width: '24px',
+                      height: '24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer'
+                    }
+                  },
+                  '×'
+                )
+              )
+            )
+          )
+        ) : null,
+        
+      // Video recording section
+      React.createElement('div', null,
+        !showRecorder ? 
+          React.createElement('button', {
+            onClick: handleStartRecording,
+            style: {
+              padding: '8px 16px',
+              background: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }
+          }, 'Record Video') :
+          // VideoRecorder component would go here
+          React.createElement('div', null, 'Video recorder would be shown here')
+      )
+    );
+  }
+  
+  function ContentsTable({ loading, data, searchTerm, onSearchChange, page, totalPages, onPageChange, keywordSearch, sortField, sortOrder, onSort, statusFilter, onStatusFilterChange }) {
+    const [expandedRowId, setExpandedRowId] = useState(null);
+    
+    const parseLabels = (labelsJson) => {
+      try {
+        if (!labelsJson) return [];
+        const labels = JSON.parse(labelsJson);
+        return Array.isArray(labels) ? [] : [];
+      } catch (e) {
+        console.error('Failed to parse labels:', e);
+        return [];
+      }
+    };
+    
+    const getPriorityClass = (priority) => {
+      if (!priority) return 'priority-none';
+      
+      const priorityNum = parseInt(priority);
+      if (isNaN(priorityNum)) return 'priority-none';
+      
+      if (priorityNum <= 3) return 'priority-low';
+      if (priorityNum <= 7) return 'priority-medium';
+      return 'priority-high';
+    };
+    
+    const renderKeywordBanner = () => {
+      if (!keywordSearch) return null;
+      
+      const keywords = keywordSearch.split(',').map(k => k.trim());
+      
+      return React.createElement(
+        'div', 
+        { 
+          style: { 
+            backgroundColor: '#e3f2fd', 
+            padding: '0.75rem', 
+            borderRadius: '4px', 
+            marginBottom: '1rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          } 
+        },
+        React.createElement(
+          'span', 
+          null, 
+          React.createElement('strong', null, keywords.length > 1 ? 'Keyword Filters: ' : 'Keyword Filter: '), 
+          keywords.join(' + ')
+        ),
+        React.createElement('button', {
+          onClick: () => {
+            const url = new URL(window.location);
+            url.searchParams.delete('keyword');
+            window.location.href = url;
+          },
+          style: {
+            backgroundColor: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: '#339af0',
+            fontSize: '0.875rem'
+          }
+        }, 'Clear Filter')
+      );
+    };
+    
+    const toggleRow = (id) => {
+      setExpandedRowId(expandedRowId === id ? null : id);
+    };
+    
+    const renderPagination = () => {
+      const pages = [];
+      const maxButtons = 5;
+      let startPage = Math.max(1, page - Math.floor(maxButtons / 2));
+      let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+      
+      if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+      }
+      
+      if (startPage > 1) {
+        pages.push(
+          React.createElement('button', { key: 'first', onClick: () => onPageChange(1) }, '«')
+        );
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(
+          React.createElement('button', {
+            key: i,
+            className: i === page ? 'active' : '',
+            onClick: () => onPageChange(i)
+          }, i)
+        );
+      }
+      
+      if (endPage < totalPages) {
+        pages.push(
+          React.createElement('button', { key: 'last', onClick: () => onPageChange(totalPages) }, '»')
+        );
+      }
+      
+      return pages;
+    };
+    
+    const renderSortIcon = (field) => {
+      if (sortField !== field) return null;
+      
+      return React.createElement(
+        'span',
+        { className: 'sort-icon' },
+        sortOrder === 'asc' ? '▲' : '▼'
+      );
+    };
+    
+    // Helper function to get status display
+    const getStatusDisplay = (status) => {
+      return status ? "Klaar" : "Niet Klaar";
+    };
+    
+    // Helper function for status styles
+    const getStatusStyle = (status) => {
+      return {
+        backgroundColor: status ? "#28a745" : "#dc3545",
+        color: "white",
+        padding: "4px 8px",
+        borderRadius: "4px",
+        display: "inline-block",
+        fontSize: "0.875rem"
+      };
+    };
+    
+    return React.createElement(
+      'div',
+      null,
+      React.createElement(
+        'div',
+        { className: 'panel' },
+        renderKeywordBanner(),
+        
+        // Add filter controls - search and status filter
+        React.createElement(
+          'div',
+          { style: { 
+            display: 'flex', 
+            gap: '10px', 
+            marginBottom: '1rem',
+            alignItems: 'center' 
+          } },
+          
+          // Search input (existing)
+          React.createElement(
+            'div',
+            { className: 'search-container', style: { flex: 1 } },
+            React.createElement('input', {
+              type: 'text',
+              className: 'search-input',
+              placeholder: 'Search by URL or content...',
+              value: searchTerm,
+              onChange: (e) => onSearchChange(e.target.value)
+            })
+          ),
+          
+          // Status filter dropdown (new)
+          React.createElement(
+            'div',
+            { style: { minWidth: '150px' } },
+            React.createElement(
+              'select',
+              {
+                value: statusFilter,
+                onChange: (e) => onStatusFilterChange(e.target.value),
+                style: {
+                  padding: '0.5rem',
+                  border: '1px solid #ced4da',
+                  borderRadius: '0.25rem',
+                  width: '100%'
+                }
+              },
+              React.createElement('option', { value: "" }, "All Status"),
+              React.createElement('option', { value: "1" }, "Klaar"),
+              React.createElement('option', { value: "0" }, "Niet Klaar")
+            )
+          )
+        ),
+        
+        loading ? 
+          React.createElement('div', { className: 'loading' },
+            React.createElement('div', { className: 'spinner' })
+          ) :
+          React.createElement('table', null,
+            React.createElement('thead', null,
+              React.createElement('tr', null,
+                React.createElement('th', null, 'ID'),
+                React.createElement('th', null, 'URL'),
+                React.createElement('th', null, 'Text Preview'),
+                React.createElement('th', null, 'Labels'),
+                React.createElement(
+                  'th', 
+                  { 
+                    className: 'sort-header',
+                    onClick: () => onSort('priority')
+                  }, 
+                  'Priority',
+                  renderSortIcon('priority')
+                ),
+                // Add Status header column
+                React.createElement('th', null, 'Status'),
+                React.createElement('th', null, 'Actions')
+              )
+            ),
+            React.createElement('tbody', null,
+              data.map((item) => {
+                const rows = [];
+                const labels = parseLabels(item.labels);
+                
+                rows.push(
+                  React.createElement('tr', { key: item.id },
+                    React.createElement('td', null, item.id),
+                    React.createElement('td', null,
+                      React.createElement('a', { 
+                        href: item.url,
+                        target: '_blank',
+                        className: 'url-link',
+                      }, item.url)
+                    ),
+                    React.createElement('td', null,
+                      React.createElement('div', { className: 'text-preview' }, 
+                        `${item.plain_text.substring(0, 100)}...`
+                      )
+                    ),
+                    React.createElement('td', null,
+                      labels.map((label, idx) => 
+                        React.createElement('span', { 
+                          key: idx,
+                          className: 'label-pill'
+                        }, label)
+                      )
+                    ),
+                    React.createElement('td', null,
+                      React.createElement('span', { 
+                        className: `label-pill ${getPriorityClass(item.priority)}` 
+                      }, item.priority || 'None')
+                    ),
+                    // Add Status column with colored indicator
+                    React.createElement('td', null,
+                      React.createElement('span', { 
+                        style: getStatusStyle(item.status)
+                      }, getStatusDisplay(item.status))
+                    ),
+                    React.createElement('td', null,
+                      React.createElement('button', {
+                        className: 'expand-btn',
+                        onClick: () => toggleRow(item.id)
+                      }, expandedRowId === item.id ? 'Close' : 'Expand')
+                    )
+                  )
+                );
+                
+                if (expandedRowId === item.id) {
+                  rows.push(
+                    React.createElement('tr', { key: `drawer-${item.id}` },
+                      React.createElement('td', { colSpan: 7, style: { padding: 0 } }, // Update colspan to 7 to include new column
+                        React.createElement(ExtendedVideoDrawer, {
+                          lemma: null,
+                          video: null,
+                          origin: null,
+                          isOpen: true,
+                          contentId: item.id,
+                          plainText: item.plain_text,
+                          preserveNewlines: true
+                        })
+                      )
+                    )
+                  );
+                }
+                
+                return rows;
+              })
+            )
+          )
+      ),
+      React.createElement('div', { className: 'pagination' }, renderPagination())
+    );
+  }
+  
+  function App() {
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [keywordSearch, setKeywordSearch] = useState('');
+    const [statusFilter, setStatusFilter] = useState(''); // New state for status filtering
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [sortField, setSortField] = useState('priority');
+    const [sortOrder, setSortOrder] = useState('asc');
+    
+    useEffect(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchParam = urlParams.get('search');
+      const keywordParam = urlParams.get('keyword');
+      const sortFieldParam = urlParams.get('sort');
+      const sortOrderParam = urlParams.get('order');
+      const statusParam = urlParams.get('status');
+      
+      if (searchParam) {
+        setSearchTerm(searchParam);
+        setDebouncedSearch(searchParam);
+      }
+      
+      if (keywordParam) {
+        setKeywordSearch(keywordParam);
+      }
+      
+      if (sortFieldParam) {
+        setSortField(sortFieldParam);
+      }
+      
+      if (sortOrderParam) {
+        setSortOrder(sortOrderParam);
+      }
+      
+      if (statusParam) {
+        setStatusFilter(statusParam);
+      }
+    }, []);
+    
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setDebouncedSearch(searchTerm);
+      }, 500);
+      return () => clearTimeout(timer);
+    }, [searchTerm]);
+    
+    useEffect(() => {
+      setPage(1);
+    }, [debouncedSearch, keywordSearch, statusFilter]);
+    
+    useEffect(() => {
+      setLoading(true);
+      
+      let apiUrl = `api.php?action=contents&page=${page}`;
+      
+      if (debouncedSearch) {
+        apiUrl += `&search=${debouncedSearch}`;
+      }
+      
+      if (keywordSearch) {
+        apiUrl += `&keyword=${keywordSearch}`;
+      }
+      
+      if (statusFilter !== "") {
+        apiUrl += `&status=${statusFilter}`;
+      }
+      
+      if (sortField && sortOrder) {
+        apiUrl += `&sort=${sortField}&order=${sortOrder}`;
+      }
+      
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(result => {
+          setData(result.data);
+          setTotalPages(Math.ceil(result.total / result.perPage));
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error(error);
+          setLoading(false);
+        });
+    }, [page, debouncedSearch, keywordSearch, statusFilter, sortField, sortOrder]);
+    
+    useEffect(() => {
+      const url = new URL(window.location);
+      
+      if (debouncedSearch) {
+        url.searchParams.set('search', debouncedSearch);
+      } else {
+        url.searchParams.delete('search');
+      }
+      
+      if (statusFilter) {
+        url.searchParams.set('status', statusFilter);
+      } else {
+        url.searchParams.delete('status');
+      }
+      
+      if (sortField) {
+        url.searchParams.set('sort', sortField);
+      } else {
+        url.searchParams.delete('sort');
+      }
+      
+      if (sortOrder) {
+        url.searchParams.set('order', sortOrder);
+      } else {
+        url.searchParams.delete('order');
+      }
+      
+      window.history.pushState({}, '', url);
+    }, [debouncedSearch, statusFilter, sortField, sortOrder]);
+    
+    const handleSort = (field) => {
+      if (sortField === field) {
+        setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      } else {
+        setSortField(field);
+        setSortOrder('asc');
+      }
+    };
+    
+    return React.createElement(
+      ContentsTable, {
+        data,
+        loading,
+        searchTerm,
+        onSearchChange: setSearchTerm,
+        page,
+        onPageChange: setPage,
+        totalPages,
+        keywordSearch,
+        sortField,
+        sortOrder,
+        onSort: handleSort,
+        statusFilter,
+        onStatusFilterChange: setStatusFilter
+      }
+    );
+  }
+  
+  const container = document.getElementById('contents-table');
+  const root = createRoot(container);
+  root.render(React.createElement(App));
+</script>
+</body>
+</html>

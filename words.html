@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Words Statistics</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #dee2e6;
+    }
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    tr:hover {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 50rem;
+      background-color: #339af0;
+      color: white;
+    }
+    .progress-bar {
+      height: 0.5rem;
+      background-color: #e9ecef;
+      border-radius: 0.25rem;
+      overflow: hidden;
+    }
+    .progress-value {
+      height: 100%;
+      background-color: #339af0;
+    }
+    .search-container {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      gap: 1rem;
+    }
+    .search-input {
+      flex: 1;
+      padding: 0.5rem 1rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+    }
+    .sort-select {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+    }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+    .pagination button {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ced4da;
+      background-color: white;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .pagination button:hover {
+      background-color: #f1f3f5;
+    }
+    .pagination button.active {
+      background-color: #339af0;
+      color: white;
+      border-color: #339af0;
+    }
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 300px;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left: 4px solid #339af0;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .panel {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 1px solid #e9ecef;
+      margin-bottom: 1.5rem;
+    }
+    
+    /* New styles for inline video drawer */
+    .video-drawer {
+      background-color: #f1f5f9;
+      padding: 1.5rem;
+      border-bottom: 1px solid #dee2e6;
+      transition: max-height 0.3s ease, opacity 0.3s ease;
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+    }
+    .video-drawer.open {
+      max-height: 400px;
+      opacity: 1;
+    }
+    .video-drawer-content {
+      display: flex;
+      gap: 2rem;
+      align-items: flex-start;
+    }
+    .video-container {
+      flex: 1;
+      max-width: 500px;
+    }
+    .video-container video {
+      width: 100%;
+      border-radius: 4px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .video-info {
+      flex: 1;
+    }
+    .video-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+    }
+    .origin {
+      padding: 0.5rem 0;
+      color: #495057;
+    }
+    .watch-button {
+      display: inline-block;
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #fa5252;
+      color: white;
+      text-decoration: none;
+      border-radius: 4px;
+      font-weight: 500;
+      transition: background-color 0.2s;
+    }
+    .watch-button:hover {
+      background-color: #e03131;
+    }
+    .selected-row {
+      background-color: #e7f5ff !important;
+    }
+    .clickable {
+      cursor: pointer;
+    }
+    tr.has-video {
+      position: relative;
+    }
+    tr.has-video::after {
+      content: "📽️";
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.25rem;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Words Statistics</h1>
+  </div>
+  <div class="navbar">
+    <a href="index.html">Dashboard</a>
+    <a href="contents.html">View Contents</a>
+    <a href="words.html">View Words Statistics</a>
+    <a href="sentences.html">View Sentences Statistics</a>
+  </div>  
+  
+  <div id="words-table"></div>
+</div>
+
+<script type="module">
+  import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+  import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+  
+  function VideoDrawer({ lemma, video, origin, isOpen }) {
+    const videoRef = useRef(null);
+
+    // Reset video when drawer closes or opens
+    useEffect(() => {
+      if (videoRef.current) {
+        if (isOpen) {
+          videoRef.current.currentTime = 0;
+          videoRef.current.play().catch(e => console.log("Autoplay prevented:", e));
+        } else {
+          videoRef.current.pause();
+        }
+      }
+    }, [isOpen]);
+
+    return React.createElement(
+      'div',
+      { 
+        className: `video-drawer ${isOpen ? 'open' : ''}`,
+        'aria-hidden': !isOpen
+      },
+      isOpen && React.createElement(
+        'div',
+        { className: 'video-drawer-content' },
+        React.createElement(
+          'div',
+          { className: 'video-container' },
+          React.createElement('video', {
+            ref: videoRef,
+            src: video,
+            controls: true,
+            autoPlay: true,
+            playsInline: true,
+            loop: true
+          })
+        ),
+        React.createElement(
+          'div',
+          { className: 'video-info' },
+          React.createElement(
+            'div',
+            { className: 'video-title' },
+            `Sign for "${lemma}"`
+          ),
+          React.createElement(
+            'div',
+            { className: 'origin' },
+            `Source: ${origin || 'SignBank'}`
+          ),
+          React.createElement(
+            'a',
+            { 
+              className: 'watch-button', 
+              href: video, 
+              target: '_blank',
+              download: `sign-${lemma}.mp4`
+            },
+            'Download Video'
+          )
+        )
+      )
+    );
+  }
+  
+  function WordsTable({ loading, data, maxCount, searchTerm, onSearchChange, orderBy, onOrderChange, page, totalPages, onPageChange, selectedWordId }) {
+    
+    const renderPagination = () => {
+      const pages = [];
+      const maxButtons = 5;
+      let startPage = Math.max(1, page - Math.floor(maxButtons / 2));
+      let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+      
+      if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+      }
+      
+      if (startPage > 1) {
+        pages.push(
+          React.createElement('button', { key: 'first', onClick: () => onPageChange(1) }, '«')
+        );
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(
+          React.createElement('button', {
+            key: i,
+            className: i === page ? 'active' : '',
+            onClick: () => onPageChange(i)
+          }, i)
+        );
+      }
+      
+      if (endPage < totalPages) {
+        pages.push(
+          React.createElement('button', { key: 'last', onClick: () => onPageChange(totalPages) }, '»')
+        );
+      }
+      
+      return pages;
+    };
+    
+    // Create table rows with video drawers
+    const renderTableRows = () => {
+      if (!data || data.length === 0) return null;
+      
+      const rows = [];
+      
+      data.forEach((item, index) => {
+        // Add the main data row
+        const rowClass = [];
+        if (item.id === selectedWordId) rowClass.push('selected-row');
+        if (item.video) rowClass.push('has-video');
+        if (item.video) rowClass.push('clickable');
+        
+        rows.push(
+          React.createElement('tr', { 
+            key: `row-${index}`,
+            className: rowClass.join(' '),
+            onClick: item.video ? () => onPageChange(page, item.id) : undefined
+          },
+            React.createElement('td', { style: { fontWeight: 500 } }, item.lemma),
+            React.createElement('td', null, 
+              React.createElement('span', { className: 'badge' }, item.cnt)
+            ),
+            React.createElement('td', null,
+              React.createElement('div', { className: 'progress-bar' },
+                React.createElement('div', { 
+                  className: 'progress-value', 
+                  style: { width: `${(item.cnt / maxCount) * 100}%` }
+                })
+              )
+            )
+          )
+        );
+        
+        // Add the drawer row if this is the selected item
+        if (item.id === selectedWordId && item.video) {
+          rows.push(
+            React.createElement('tr', { key: `drawer-${index}` },
+              React.createElement('td', { colSpan: 3, style: { padding: 0 } },
+                React.createElement(VideoDrawer, {
+                  lemma: item.lemma,
+                  video: item.video,
+                  origin: item.origin,
+                  isOpen: true
+                })
+              )
+            )
+          );
+        }
+      });
+      
+      return rows;
+    };
+    
+    return React.createElement(
+      'div',
+      null,
+      React.createElement(
+        'div',
+        { className: 'panel' },
+        React.createElement(
+          'div',
+          { className: 'search-container' },
+          React.createElement('input', {
+            type: 'text',
+            className: 'search-input',
+            placeholder: 'Search lemmas...',
+            value: searchTerm,
+            onChange: (e) => onSearchChange(e.target.value)
+          }),
+          React.createElement('select', {
+            className: 'sort-select',
+            value: orderBy,
+            onChange: (e) => onOrderChange(e.target.value)
+          }, [
+            React.createElement('option', { key: 'cnt_desc', value: 'cnt_desc' }, 'Highest Frequency First'),
+            React.createElement('option', { key: 'cnt_asc', value: 'cnt_asc' }, 'Lowest Frequency First'),
+            React.createElement('option', { key: 'lemma_asc', value: 'lemma_asc' }, 'Alphabetical (A-Z)'),
+            React.createElement('option', { key: 'lemma_desc', value: 'lemma_desc' }, 'Alphabetical (Z-A)')
+          ])
+        ),
+        loading ? 
+          React.createElement('div', { className: 'loading' },
+            React.createElement('div', { className: 'spinner' })
+          ) :
+          React.createElement('table', null,
+            React.createElement('thead', null,
+              React.createElement('tr', null,
+                React.createElement('th', null, 'Lemma'),
+                React.createElement('th', null, 'Frequency'),
+                React.createElement('th', null, 'Distribution')
+              )
+            ),
+            React.createElement('tbody', null, renderTableRows())
+          )
+      ),
+      React.createElement('div', { className: 'pagination' }, renderPagination())
+    );
+  }
+  
+  function App() {
+    const [data, setData] = useState({ data: [], total: 0, maxCount: 0 });
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [orderBy, setOrderBy] = useState('cnt_desc');
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [selectedWordId, setSelectedWordId] = useState(null);
+    
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setDebouncedSearch(searchTerm);
+      }, 500);
+      return () => clearTimeout(timer);
+    }, [searchTerm]);
+    
+    useEffect(() => {
+      setPage(1);
+      setSelectedWordId(null); // Close any open drawer when search or sorting changes
+    }, [debouncedSearch, orderBy]);
+    
+    useEffect(() => {
+      setLoading(true);
+      fetch(`api.php?action=words&page=${page}&search=${debouncedSearch}&order=${orderBy}`)
+        .then(response => response.json())
+        .then(result => {
+          // Add a unique id to each item
+          const processedData = result.data.map((item, index) => ({
+            ...item,
+            id: `word-${page}-${index}`
+          }));
+          
+          setData({
+            data: processedData,
+            total: result.total,
+            maxCount: result.maxCount
+          });
+          setTotalPages(Math.ceil(result.total / result.perPage));
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error(error);
+          setLoading(false);
+        });
+    }, [page, debouncedSearch, orderBy]);
+    
+    const handleWordSelect = (page, wordId) => {
+      setSelectedWordId(selectedWordId === wordId ? null : wordId);
+    };
+    
+    const handlePageChange = (newPage) => {
+      if (newPage !== page) {
+        setSelectedWordId(null); // Close any open drawer when page changes
+        setPage(newPage);
+      }
+    };
+    
+    return React.createElement(
+      WordsTable, {
+        data: data.data,
+        maxCount: data.maxCount,
+        loading,
+        searchTerm,
+        onSearchChange: setSearchTerm,
+        orderBy,
+        onOrderChange: setOrderBy,
+        page,
+        onPageChange: (newPage, wordId) => {
+          if (wordId) {
+            handleWordSelect(newPage, wordId);
+          } else {
+            handlePageChange(newPage);
+          }
+        },
+        totalPages,
+        selectedWordId,
+      }
+    );
+  }
+  
+  const container = document.getElementById('words-table');
+  const root = createRoot(container);
+  root.render(React.createElement(App));
+</script>
+</body>
+</html>

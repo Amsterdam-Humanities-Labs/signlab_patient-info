@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Begrippenlijst</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #dee2e6;
+    }
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    tr:hover {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+    .search-container {
+      display: flex;
+      margin-bottom: 1rem;
+    }
+    .search-input {
+      flex: 1;
+      padding: 0.5rem 1rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+    }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+    .pagination button {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ced4da;
+      background-color: white;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .pagination button:hover {
+      background-color: #f1f3f5;
+    }
+    .pagination button.active {
+      background-color: #339af0;
+      color: white;
+      border-color: #339af0;
+    }
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 300px;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left: 4px solid #339af0;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .panel {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 1px solid #e9ecef;
+      margin-bottom: 1.5rem;
+    }
+    .link-button {
+      display: inline-block;
+      padding: 4px 8px;
+      background-color: #339af0;
+      color: white;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: background-color 0.2s;
+    }
+    .link-button:hover {
+      background-color: #228be6;
+    }
+    .url-link {
+      color: #339af0;
+      text-decoration: none;
+    }
+    .url-link:hover {
+      text-decoration: underline;
+    }
+    .text-preview {
+      max-width: 400px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .stats-bar {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      flex: 1;
+      background-color: white;
+      border-radius: 8px;
+      padding: 15px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .stat-card h2 {
+      margin: 0;
+      font-size: 2rem;
+      color: #339af0;
+    }
+    .stat-card p {
+      margin: 5px 0 0;
+      color: #6c757d;
+    }
+    .source-list {
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .source-list li {
+      margin-bottom: 4px;
+    }
+    .action-buttons button, .action-buttons a {
+      margin-right: 5px; /* Add some space between buttons */
+    }
+    .edit-row td {
+      padding: 1rem;
+      background-color: #f8f9fa; /* Light background for edit row */
+      border-top: 2px solid #dee2e6; /* Separator */
+    }
+    .edit-form label {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-weight: 600;
+    }
+    .edit-form input[type="text"],
+    .edit-form textarea {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+      margin-bottom: 0.75rem;
+      box-sizing: border-box; /* Include padding in width */
+    }
+    .edit-form textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    .edit-sources-list {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 1rem;
+    }
+    .edit-sources-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.25rem 0;
+      border-bottom: 1px dashed #e0e0e0;
+    }
+    .edit-sources-list li:last-child {
+      border-bottom: none;
+    }
+    .remove-source-btn {
+      padding: 2px 6px;
+      font-size: 0.75rem;
+      background-color: #f03e3e;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .remove-source-btn:hover {
+      background-color: #c92a2a;
+    }
+    .edit-actions button {
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      margin-right: 0.5rem;
+    }
+    .save-btn {
+      background-color: #40c057;
+      color: white;
+      border: 1px solid #40c057;
+    }
+    .save-btn:hover {
+      background-color: #37b24d;
+    }
+    .cancel-btn {
+      background-color: #adb5bd;
+      color: white;
+      border: 1px solid #adb5bd;
+    }
+    .cancel-btn:hover {
+      background-color: #868e96;
+    }
+    .edit-button {
+      display: inline-block;
+      padding: 4px 8px;
+      background-color: #ff922b; /* Orange color for edit */
+      color: white;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: background-color 0.2s;
+      border: none;
+      cursor: pointer;
+      margin-left: 5px; /* Space from previous button */
+    }
+    .edit-button:hover {
+      background-color: #f76707;
+    }
+    /* Add new styles for video status badges and modal */
+    .video-badge {
+      padding: 4px 8px;
+      border-radius: 12px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 0.85rem;
+      display: inline-block;
+    }
+    
+    .has-video {
+      background-color: #28a745;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .has-video:hover {
+      background-color: #218838;
+    }
+    
+    .no-video {
+      background-color: #dc3545;
+      color: white;
+    }
+    
+    .loading {
+      background-color: #6c757d;
+      color: white;
+    }
+    
+    .video-modal video {
+      border: 2px solid white;
+    }
+    /* Video modal styles */
+    .video-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .video-modal-content {
+      background: #000;
+      padding: 20px;
+      border-radius: 8px;
+      position: relative;
+      max-width: 90%;
+      max-height: 90%;
+    }
+    /* Update video badge styles for hover behavior */
+    .video-badge.has-video {
+      background-color: #28a745;
+      color: white;
+      cursor: pointer;
+      border: none; /* Remove border since it's now a div not a button */
+      transition: background-color 0.2s;
+    }
+  
+    /* Update for tooltip style video display */
+    .video-tooltip {
+      transition: opacity 0.2s;
+      pointer-events: none; /* Prevents the tooltip from interfering with mouse events */
+    }
+  
+    .video-tooltip video {
+      border: 2px solid white;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Begrippenlijst</h1>
+  </div>
+   
+  <div class="navbar">
+    <a href="index.html">Dashboard</a>
+    <a href="contents.html">View Contents</a>
+    <a href="words.html">View Words Statistics</a>
+    <a href="sentences.html">View Sentences Statistics</a>
+    <a href="begrippenlijst.html" class="active">Begrippenlijst</a>
+  </div>
+  
+  <div id="glossary-list"></div>
+</div>
+
+<script type="module">
+  import React, { useState, useEffect, useCallback, Fragment } from 'https://esm.sh/react@18.2.0';
+  import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+  
+  // Create a cache object outside the component to persist across renders
+  const videoDataCache = {};
+  
+  function GlossaryList() {
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [total, setTotal] = useState(0);
+    const [editingIndex, setEditingIndex] = useState(null); // Index of the row being edited
+    const [editFormData, setEditFormData] = useState({ glos: '', text: '' }); // State for edit form inputs
+    const [error, setError] = useState(null); // State for API errors
+
+    // Changed this state to use the persistent cache
+    const [videoData, setVideoData] = useState(videoDataCache);
+    const [videoModalState, setVideoModalState] = useState({
+      visible: false,
+      url: null,
+      position: { x: 0, y: 0 }
+    });
+    const [loadingVideos, setLoadingVideos] = useState(false);
+    const [checkedTermsCount, setCheckedTermsCount] = useState(0);
+    const [termsToCheck, setTermsToCheck] = useState([]);
+
+    const fetchData = useCallback(() => {
+      setLoading(true);
+      setError(null); // Clear previous errors
+      let apiUrl = `api.php?action=get_all_glossary&page=${page}`;
+      if (debouncedSearch) {
+        apiUrl += `&search=${encodeURIComponent(debouncedSearch)}`;
+      }
+      
+      fetch(apiUrl)
+        .then(response => response.json())
+        .then(result => {
+          if (result.error) {
+             throw new Error(result.error);
+          }
+          setData(result.data);
+          setTotalPages(Math.ceil(result.total / result.perPage));
+          setTotal(result.total);
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error('Error fetching glossary data:', error);
+          setError(`Failed to load data: ${error.message}`);
+          setLoading(false);
+        });
+    }, [page, debouncedSearch]);
+
+    // Completely revised fetchVideoInfo function
+    const fetchVideoInfo = useCallback(() => {
+      if (!data.length) return;
+      
+      // Get unique terms that haven't been checked yet
+      const termsList = data
+        .map(item => item.glos)
+        .filter((value, index, self) => self.indexOf(value) === index) // Get unique terms
+        .filter(term => !videoDataCache[term]); // Filter out terms we've already checked
+      
+      // Store in state so it can be accessed by the render function
+      setTermsToCheck(termsList);
+      
+      // If all terms have been checked already, return early
+      if (termsList.length === 0) {
+        return;
+      }
+      
+      setLoadingVideos(true);
+      setCheckedTermsCount(0);
+      
+      // Maximum batch size to avoid overwhelming the server
+      const batchSize = 5;
+      const batches = [];
+      
+      // Split terms into batches
+      for (let i = 0; i < termsList.length; i += batchSize) {
+        batches.push(termsList.slice(i, i + batchSize));
+      }
+      
+      // Process each batch sequentially
+      const processBatch = async (batchIndex) => {
+        if (batchIndex >= batches.length) {
+          // All batches processed
+          setLoadingVideos(false);
+          return;
+        }
+        
+        const currentBatch = batches[batchIndex];
+        const batchPromises = currentBatch.map(term => 
+          fetch(`api.php?action=check_term_video&glos=${encodeURIComponent(term)}`)
+            .then(response => response.json())
+            .then(result => {
+              // Update the global cache
+              videoDataCache[term] = {
+                has_video: result.has_video,
+                video_url: result.video_url || null
+              };
+              
+              // Update the checked count for progress tracking
+              setCheckedTermsCount(prev => prev + 1);
+              
+              return { term, result };
+            })
+            .catch(error => {
+              console.error(`Error checking video for ${term}:`, error);
+              videoDataCache[term] = { has_video: false, error: true };
+              
+              setCheckedTermsCount(prev => prev + 1);
+              
+              return { term, error: true };
+            })
+        );
+        
+        // Wait for all promises in the current batch
+        await Promise.all(batchPromises);
+        
+        // Update the UI with the latest cache data
+        setVideoData({...videoDataCache});
+        
+        // Process the next batch with a small delay to prevent overwhelming the server
+        setTimeout(() => {
+          processBatch(batchIndex + 1);
+        }, 300);
+      };
+      
+      // Start processing with the first batch
+      processBatch(0);
+      
+    }, [data]); // Only depend on data changes, not on videoData
+
+    // Debounce search term
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setDebouncedSearch(searchTerm);
+      }, 500);
+      return () => clearTimeout(timer);
+    }, [searchTerm]);
+    
+    // Reset to page 1 when search changes
+    useEffect(() => {
+      setPage(1);
+    }, [debouncedSearch]);
+    
+    // Fetch data on page load and when dependencies change
+    useEffect(() => {
+      fetchData();
+    }, [fetchData]); // Use the memoized fetchData
+
+    // Call video info fetch only when data actually changes
+    useEffect(() => {
+      if (!loading && data.length > 0) {
+        fetchVideoInfo();
+      }
+    }, [loading, data, fetchVideoInfo]);
+    
+    // Update URL when parameters change
+    useEffect(() => {
+      const url = new URL(window.location);
+      if (debouncedSearch) url.searchParams.set('search', debouncedSearch);
+      else url.searchParams.delete('search');
+      if (page > 1) url.searchParams.set('page', page);
+      else url.searchParams.delete('page');
+      window.history.pushState({}, '', url);
+    }, [debouncedSearch, page]);
+    
+    // Initialize from URL parameters
+    useEffect(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchParam = urlParams.get('search');
+      const pageParam = urlParams.get('page');
+      if (searchParam) setSearchTerm(searchParam);
+      if (pageParam) {
+        const pageNumber = parseInt(pageParam);
+        if (!isNaN(pageNumber) && pageNumber > 0) setPage(pageNumber);
+      }
+    }, []);
+
+    const handleEditClick = (index, item) => {
+      setEditingIndex(index);
+      setEditFormData({ glos: item.glos, text: item.text }); // Pre-fill form
+      setError(null); // Clear errors when opening edit form
+    };
+
+    const handleCancelEdit = () => {
+      setEditingIndex(null);
+      setError(null);
+    };
+
+    const handleSaveEdit = (originalGlos, originalText) => {
+      setLoading(true); // Indicate saving
+      setError(null);
+      fetch('api.php?action=update_glossary_group', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          original_glos: originalGlos,
+          original_text: originalText,
+          new_glos: editFormData.glos,
+          new_text: editFormData.text,
+        }),
+      })
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          setEditingIndex(null); // Close form on success
+          fetchData(); // Refetch data to show changes
+        } else {
+          throw new Error(result.error || 'Update failed');
+        }
+      })
+      .catch(error => {
+        console.error('Error updating glossary:', error);
+        setError(`Save failed: ${error.message}`);
+        setLoading(false); // Stop loading indicator on error
+      });
+    };
+
+    const handleRemoveSource = (glosId) => {
+       if (!confirm('Are you sure you want to remove this source link? This cannot be undone.')) {
+           return;
+       }
+       setLoading(true); // Indicate processing
+       setError(null);
+       fetch('api.php?action=delete_glossary_source', {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({ glos_id: glosId }),
+       })
+       .then(response => response.json())
+       .then(result => {
+           if (result.success) {
+               fetchData(); // Refetch data to update the list (edit form remains open)
+               // Note: We keep the edit form open, but the source list within it will update after refetch.
+               // A more sophisticated approach might update the local state directly.
+           } else {
+               throw new Error(result.error || 'Delete failed');
+           }
+       })
+       .catch(error => {
+           console.error('Error removing source:', error);
+           setError(`Remove source failed: ${error.message}`);
+           setLoading(false); // Stop loading indicator on error
+       });
+    };
+
+    const handleEditFormChange = (event) => {
+      const { name, value } = event.target;
+      setEditFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    // Add mouse event handlers for video modal
+    const handleVideoMouseEnter = (url, event) => {
+      setVideoModalState({
+        visible: true,
+        url,
+        position: { x: event.clientX, y: event.clientY }
+      });
+    };
+    
+    const handleVideoMouseMove = (event) => {
+      if (videoModalState.visible) {
+        // Add offset to prevent flickering and position the video below the cursor
+        setVideoModalState(prev => ({
+          ...prev,
+          position: { x: event.clientX + 10, y: event.clientY + 20 }
+        }));
+      }
+    };
+    
+    const handleVideoMouseLeave = () => {
+      setVideoModalState({
+        visible: false,
+        url: null,
+        position: { x: 0, y: 0 }
+      });
+    };
+    
+    const renderPagination = () => {
+      // ... existing pagination logic ...
+       const pages = [];
+      const maxButtons = 5;
+      let startPage = Math.max(1, page - Math.floor(maxButtons / 2));
+      let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+      
+      if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+      }
+      
+      if (startPage > 1) {
+        pages.push(
+          React.createElement('button', { key: 'first', onClick: () => setPage(1) }, '«')
+        );
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(
+          React.createElement('button', {
+            key: i,
+            className: i === page ? 'active' : '',
+            onClick: () => setPage(i)
+          }, i)
+        );
+      }
+      
+      if (endPage < totalPages) {
+        pages.push(
+          React.createElement('button', { key: 'last', onClick: () => setPage(totalPages) }, '»')
+        );
+      }
+      
+      return pages;
+    };
+
+    // Render video status column (use the cached data)
+    const renderVideoStatus = (glos) => {
+      if (!videoDataCache[glos]) {
+        return React.createElement('div', { className: 'video-badge loading' }, 'Checking...');
+      }
+      
+      const videoInfo = videoDataCache[glos];
+      
+      if (videoInfo.has_video) {
+        return React.createElement(
+          'div',
+          {
+            className: 'video-badge has-video',
+            onMouseEnter: (e) => handleVideoMouseEnter(videoInfo.video_url, e),
+            onMouseMove: handleVideoMouseMove,
+            onMouseLeave: handleVideoMouseLeave
+          },
+          'Has Video'
+        );
+      } else {
+        return React.createElement('div', { className: 'video-badge no-video' }, 'No Video');
+      }
+    };
+    
+    return React.createElement(
+      'div',
+      null,
+      
+      // Stats bar
+      React.createElement(
+        'div', { className: 'stats-bar' },
+        React.createElement(
+          'div', { className: 'stat-card' },
+          React.createElement('h2', null, total),
+          React.createElement('p', null, 'Total Begrippen (Unique)')
+        )
+      ),
+      
+      // Panel for search and list
+      React.createElement(
+        'div', { className: 'panel' },
+        React.createElement(
+          'div', { className: 'search-container' },
+          React.createElement('input', {
+            type: 'text', className: 'search-input', placeholder: 'Search begrippen...',
+            value: searchTerm, onChange: (e) => setSearchTerm(e.target.value)
+          })
+        ),
+        
+        // Add loading progress indicator if we're checking videos
+        loadingVideos && termsToCheck.length > 0 && React.createElement(
+          'div',
+          {
+            style: {
+              padding: '5px 10px',
+              backgroundColor: '#e9ecef',
+              borderRadius: '4px',
+              marginBottom: '10px',
+              fontSize: '0.875rem'
+            }
+          },
+          `Loading videos: ${checkedTermsCount} of ${termsToCheck.length} terms checked`
+        ),
+        
+        // Loading spinner or data table
+        loading && editingIndex === null ? // Show main loading only when not editing
+          React.createElement('div', { className: 'loading' }, React.createElement('div', { className: 'spinner' })) :
+          React.createElement('table', null,
+            React.createElement('thead', null,
+              React.createElement('tr', null,
+                React.createElement('th', null, 'Term'),
+                React.createElement('th', null, 'Definition'),
+                React.createElement('th', null, 'Source(s)'),
+                // Add new column for video status
+                React.createElement('th', null, 'Video'),
+                React.createElement('th', null, 'Actions')
+              )
+            ),
+            React.createElement('tbody', null,
+              data.length > 0 ? 
+                data.map((item, index) => 
+                  React.createElement(Fragment, { key: `${item.original_glos}-${index}` }, // Use original glos + index as key
+                    // Main data row
+                    React.createElement('tr', null,
+                      React.createElement('td', null, item.glos),
+                      React.createElement('td', null, 
+                        React.createElement('div', { className: 'text-preview' }, item.text)
+                      ),
+                      React.createElement('td', null, 
+                        item.sources && item.sources.length > 0 ?
+                          React.createElement('ul', { className: 'source-list' },
+                            item.sources
+                              .filter(source => source.content_id) // Only show sources with content_id
+                              .map(source => 
+                                React.createElement('li', { key: source.glos_id }, // Use glos_id as key
+                                  React.createElement('a', { 
+                                    href: `contents.html?search=${encodeURIComponent(source.url)}`, 
+                                    className: 'url-link', target: '_blank' 
+                                  }, `Content #${source.content_id}`)
+                                )
+                              )
+                          ) : 'N/A'
+                      ),
+                      // Add video status cell
+                      React.createElement('td', null, renderVideoStatus(item.glos)),
+                      React.createElement('td', { className: 'action-buttons' },
+                        React.createElement('a', { 
+                          href: `../menu.html?extern=1&gloss=${encodeURIComponent(item.glos)}`,
+                          className: 'link-button'
+                        }, 'Bekijken'),
+                        React.createElement('button', { 
+                          className: 'edit-button',
+                          onClick: () => handleEditClick(index, item),
+                          disabled: loading // Disable while loading/saving
+                        }, 'Edit')
+                      )
+                    ),
+                    // Edit row (conditionally rendered)
+                    editingIndex === index && React.createElement(
+                      'tr', { className: 'edit-row' },
+                      React.createElement('td', { colSpan: 5 }, // Span across all columns
+                        React.createElement('div', { className: 'edit-form' },
+                          React.createElement('h4', null, 'Edit Term & Definition'),
+                           error && React.createElement('div', { style: { color: 'red', marginBottom: '10px' } }, error), // Display error messages
+                          React.createElement('label', { htmlFor: `edit-glos-${index}` }, 'Term'),
+                          React.createElement('input', {
+                            type: 'text', id: `edit-glos-${index}`, name: 'glos',
+                            value: editFormData.glos, onChange: handleEditFormChange, disabled: loading
+                          }),
+                          React.createElement('label', { htmlFor: `edit-text-${index}` }, 'Definition'),
+                          React.createElement('textarea', {
+                            id: `edit-text-${index}`, name: 'text',
+                            value: editFormData.text, onChange: handleEditFormChange, disabled: loading
+                          }),
+                          
+                          React.createElement('h5', null, 'Manage Sources'),
+                          item.sources && item.sources.length > 0 ?
+                            React.createElement('ul', { className: 'edit-sources-list' },
+                              item.sources.map(source => 
+                                React.createElement('li', { key: source.glos_id },
+                                  source.content_id ? 
+                                    `Content #${source.content_id} (ID: ${source.glos_id})` : 
+                                    `Entry without source link (ID: ${source.glos_id})`,
+                                  React.createElement('button', { 
+                                    className: 'remove-source-btn',
+                                    onClick: () => handleRemoveSource(source.glos_id),
+                                    disabled: loading
+                                  }, 'Remove')
+                                )
+                              )
+                            ) : React.createElement('p', null, 'No sources linked.'),
+
+                          React.createElement('div', { className: 'edit-actions' },
+                            React.createElement('button', { 
+                              className: 'save-btn', 
+                              onClick: () => handleSaveEdit(item.original_glos, item.original_text),
+                              disabled: loading
+                            }, loading ? 'Saving...' : 'Save Changes'),
+                            React.createElement('button', { 
+                              className: 'cancel-btn', 
+                              onClick: handleCancelEdit,
+                              disabled: loading
+                            }, 'Cancel')
+                          )
+                        )
+                      )
+                    )
+                  ) // End Fragment
+                ) :
+                React.createElement('tr', null,
+                  React.createElement('td', { colSpan: 5, style: { textAlign: 'center' } }, 
+                    debouncedSearch ? `No results found for "${debouncedSearch}"` : 'No begrippen entries found'
+                  )
+                )
+            )
+          ),
+          
+        // Video modal (centered on screen)
+        videoModalState.visible && videoModalState.url && React.createElement(
+          'div',
+          {
+            className: 'video-tooltip',
+            style: {
+              position: 'fixed',
+              left: `${videoModalState.position.x}px`,
+              top: `${videoModalState.position.y}px`,
+              zIndex: 9999,
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              padding: '8px',
+              borderRadius: '4px',
+              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)'
+            }
+          },
+          React.createElement(
+            'video',
+            {
+              src: videoModalState.url,
+              autoPlay: true,
+              controls: true,
+              style: {
+                maxWidth: '320px',
+                maxHeight: '240px',
+                display: 'block'
+              }
+            }
+          )
+        )
+      ),
+      
+      // Pagination
+      totalPages > 1 && 
+        React.createElement('div', { className: 'pagination' }, renderPagination())
+    );
+  }
+  
+  const container = document.getElementById('glossary-list');
+  const root = createRoot(container);
+  root.render(React.createElement(GlossaryList));
+</script>
+</body>
+</html>
