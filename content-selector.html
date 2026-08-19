@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Content Selector</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      padding: 20px;
+      background-color: #f8f9fa;
+    }
+    .content-selector {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .selector-header {
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+    }
+    #status-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 5px;
+      background-color: #dc3545; /* Red by default */
+    }
+    .connected {
+      background-color: #198754 !important; /* Green when connected */
+    }
+    #content-select {
+      height: auto;
+      max-height: 300px;
+    }
+    .selected-content-details {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 5px;
+      background-color: #f8f9fa;
+      border: 1px solid #dee2e6;
+    }
+    .action-buttons {
+      margin-top: 20px;
+    }
+    .search-container {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="content-selector">
+      <div class="selector-header">
+        <h2>Content Selector</h2>
+        <p>WebSocket Status: <span id="status-indicator"></span> <span id="connection-status">Disconnected</span></p>
+      </div>
+
+      <div class="search-container">
+        <div class="input-group mb-3">
+          <input type="text" id="search-input" class="form-control" placeholder="Search content...">
+          <button class="btn btn-primary" id="search-button">Search</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="content-select">Select Content:</label>
+        <select id="content-select" class="form-select" size="10">
+          <option value="">Loading content...</option>
+        </select>
+      </div>
+
+      <div id="selected-content" class="selected-content-details d-none">
+        <h5>Selected Content</h5>
+        <p><strong>ID:</strong> <span id="selected-id"></span></p>
+        <p><strong>Title:</strong> <span id="selected-title"></span></p>
+        <div class="text-preview">
+          <strong>Text Preview:</strong>
+          <p id="text-preview"></p>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button id="show-text-button" class="btn btn-primary me-2" disabled>Show Text</button>
+        <button id="start-button" class="btn btn-success me-2" disabled>Start Autocue</button>
+        <button id="stop-button" class="btn btn-danger" disabled>Stop Autocue</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Global variables
+    let ws;
+    let selectedContent = null;
+    let contentData = [];
+    
+    // Connect to WebSocket server
+    function connect() {
+      ws = new WebSocket('wss://signcollect.nl/studioSupport/');
+
+      ws.onopen = () => {
+        console.log('Connected to server.');
+        $('#status-indicator').addClass('connected');
+        $('#connection-status').text('Connected');
+        
+        // Send hello message
+        ws.send(JSON.stringify({ glosId: '9999', selectedType: 'none', status: 'hello' }));
+        
+        // Enable buttons when connected
+        updateButtonState();
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        $('#status-indicator').removeClass('connected');
+        $('#connection-status').text('Error connecting');
+      };
+
+      ws.onclose = () => {
+        console.log('Disconnected from server. Attempting to reconnect...');
+        $('#status-indicator').removeClass('connected');
+        $('#connection-status').text('Reconnecting...');
+        
+        // Disable buttons when disconnected
+        $('#start-button, #stop-button').prop('disabled', true);
+        
+        setTimeout(connect, 1000);
+      };
+      
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('Message received:', data);
+      };
+    }
+    
+    function sendStartorStopCapture(glosId, selectedType, status) {
+      console.log(glosId, status, selectedType);
+      const message = JSON.stringify({ glosId: glosId, selectedType: selectedType, status: status });
+      ws.send(message);
+    }
+    
+    // Fetch content from api.php
+    function fetchContent(search = '') {
+      $('#content-select').html('<option value="">Loading content...</option>');
+      
+      $.ajax({
+        url: 'api.php',
+        method: 'GET',
+        data: {
+          action: 'content_extended',
+          search: search,
+          page: 1,
+          perPage: 100
+        },
+        success: function(response) {
+          if (response.data && response.data.length > 0) {
+            contentData = response.data;
+            
+            // Populate select list
+            $('#content-select').empty();
+            contentData.forEach(item => {
+              // Extract a title from URL or plain_text
+              let title = item.url ? item.url.split('/').pop() : '';
+              if (!title && item.plain_text) {
+                // Take first 30 chars of text as fallback title
+                title = item.plain_text.substring(0, 30) + (item.plain_text.length > 30 ? '...' : '');
+              }
+              
+              $('#content-select').append(`<option value="${item.id}">${title}</option>`);
+            });
+          } else {
+            $('#content-select').html('<option value="">No content found</option>');
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('AJAX error:', error);
+          $('#content-select').html('<option value="">Error loading content</option>');
+        }
+      });
+    }
+    
+    // Update button state based on selection and connection
+    function updateButtonState() {
+      const isConnected = $('#status-indicator').hasClass('connected');
+      const hasSelection = selectedContent !== null;
+      
+      $('#start-button').prop('disabled', !(isConnected && hasSelection));
+      $('#stop-button').prop('disabled', !(isConnected && hasSelection));
+      $('#show-text-button').prop('disabled', !(isConnected && hasSelection));
+    }
+    
+    // Initialize the application
+    $(document).ready(function() {
+      // Connect to WebSocket
+      connect();
+      
+      // Initial content fetch
+      fetchContent();
+      
+      // Handle content selection
+      $('#content-select').change(function() {
+        const selectedId = $(this).val();
+        
+        if (selectedId) {
+          // Find the selected content in our data array
+          selectedContent = contentData.find(item => item.id == selectedId);
+          
+          if (selectedContent) {
+            // Update the selected content details
+            $('#selected-id').text(selectedContent.id);
+            $('#selected-title').text(selectedContent.url || 'No title');
+            $('#text-preview').text(selectedContent.plain_text.substring(0, 150) + 
+              (selectedContent.plain_text.length > 150 ? '...' : ''));
+            
+            $('#selected-content').removeClass('d-none');
+          }
+        } else {
+          selectedContent = null;
+          $('#selected-content').addClass('d-none');
+        }
+        
+        updateButtonState();
+      });
+      
+      // Handle search button click
+      $('#search-button').click(function() {
+        const searchTerm = $('#search-input').val();
+        fetchContent(searchTerm);
+      });
+      
+      // Enter key in search input
+      $('#search-input').keypress(function(e) {
+        if (e.which == 13) {
+          $('#search-button').click();
+          return false;
+        }
+      });
+      
+      // Handle start button click
+      $('#start-button').click(function() {
+        if (selectedContent) {
+          sendStartorStopCapture(selectedContent.id, "tekst_start", "start");
+          $(this).prop('disabled', true);
+          setTimeout(() => {
+            $(this).prop('disabled', false);
+          }, 2000); // Prevent multiple clicks
+        }
+      });
+      
+      // Handle stop button click
+      $('#stop-button').click(function() {
+        if (selectedContent) {
+          sendStartorStopCapture(selectedContent.id, "tekst_start", "stop");
+          $(this).prop('disabled', true);
+          setTimeout(() => {
+            $(this).prop('disabled', false);
+          }, 2000); // Prevent multiple clicks
+        }
+      });
+
+      // Handle show text button click
+      $('#show-text-button').click(function() {
+        if (selectedContent) {
+          // Fetch the content's text first
+          $.ajax({
+            url: 'api.php',
+            method: 'GET',
+            data: {
+              action: 'get_content_ngt_text_extended',
+              id: selectedContent.id
+            },
+            success: function(response) {
+              if (response.ngt_text) {
+                // Send the text to the autocue via WebSocket
+                sendStartorStopCapture(
+                  selectedContent.id, 
+                  "show_text", 
+                  { 
+                    text: response.ngt_text,
+                    title: selectedContent.url || 'No title'
+                  }
+                );
+              } else {
+                alert('No text content available for this item.');
+              }
+            },
+            error: function(xhr, status, error) {
+              console.error('AJAX error:', error);
+              alert('Error fetching text content.');
+            }
+          });
+          
+          $(this).prop('disabled', true);
+          setTimeout(() => {
+            $(this).prop('disabled', false);
+          }, 2000); // Prevent multiple clicks
+        }
+      });
+    });
+  </script>
+</body>
+</html>

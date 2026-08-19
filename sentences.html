@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sentences Statistics</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #dee2e6;
+    }
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    tr:hover {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 50rem;
+      background-color: #339af0;
+      color: white;
+    }
+    .progress-bar {
+      height: 0.5rem;
+      background-color: #e9ecef;
+      border-radius: 0.25rem;
+      overflow: hidden;
+    }
+    .progress-value {
+      height: 100%;
+      background-color: #339af0;
+    }
+    .search-container {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      gap: 1rem;
+    }
+    .search-input {
+      flex: 1;
+      padding: 0.5rem 1rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+    }
+    .sort-select {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ced4da;
+      border-radius: 0.25rem;
+    }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.5rem;
+    }
+    .pagination button {
+      padding: 0.5rem 1rem;
+      border: 1px solid #ced4da;
+      background-color: white;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .pagination button:hover {
+      background-color: #f1f3f5;
+    }
+    .pagination button.active {
+      background-color: #339af0;
+      color: white;
+      border-color: #339af0;
+    }
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 300px;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left: 4px solid #339af0;
+      animation: spin 1s linear infinite;
+    }
+    .sentence-cell {
+      max-width: 400px;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      line-height: 1.5;
+      max-height: 4.5em; /* 3 lines */
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .panel {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 1px solid #e9ecef;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Sentences Statistics</h1>
+  </div>
+  <div class="navbar">
+    <a href="index.html">Dashboard</a>
+    <a href="contents.html">View Contents</a>
+    <a href="words.html">View Words Statistics</a>
+    <a href="sentences.html">View Sentences Statistics</a>
+  </div>
+  <div id="sentences-table"></div>
+  
+
+</div>
+
+<script type="module">
+  import React, { useState, useEffect } from 'https://esm.sh/react@18.2.0';
+  import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+  
+  function SentencesTable({ loading, data, maxCount, searchTerm, onSearchChange, orderBy, onOrderChange, page, totalPages, onPageChange }) {
+    
+    const renderPagination = () => {
+      const pages = [];
+      const maxButtons = 5;
+      let startPage = Math.max(1, page - Math.floor(maxButtons / 2));
+      let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+      
+      if (endPage - startPage + 1 < maxButtons) {
+        startPage = Math.max(1, endPage - maxButtons + 1);
+      }
+      
+      if (startPage > 1) {
+        pages.push(
+          React.createElement('button', { key: 'first', onClick: () => onPageChange(1) }, '«')
+        );
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(
+          React.createElement('button', {
+            key: i,
+            className: i === page ? 'active' : '',
+            onClick: () => onPageChange(i)
+          }, i)
+        );
+      }
+      
+      if (endPage < totalPages) {
+        pages.push(
+          React.createElement('button', { key: 'last', onClick: () => onPageChange(totalPages) }, '»')
+        );
+      }
+      
+      return pages;
+    };
+    
+    return React.createElement(
+      'div',
+      null,
+      React.createElement(
+        'div',
+        { className: 'panel' },
+        React.createElement(
+          'div',
+          { className: 'search-container' },
+          React.createElement('input', {
+            type: 'text',
+            className: 'search-input',
+            placeholder: 'Search sentences...',
+            value: searchTerm,
+            onChange: (e) => onSearchChange(e.target.value)
+          }),
+          React.createElement('select', {
+            className: 'sort-select',
+            value: orderBy,
+            onChange: (e) => onOrderChange(e.target.value)
+          }, [
+            React.createElement('option', { key: 'cnt_desc', value: 'cnt_desc' }, 'Highest Frequency First'),
+            React.createElement('option', { key: 'cnt_asc', value: 'cnt_asc' }, 'Lowest Frequency First'),
+            React.createElement('option', { key: 'sentence_asc', value: 'sentence_asc' }, 'Alphabetical (A-Z)'),
+            React.createElement('option', { key: 'sentence_desc', value: 'sentence_desc' }, 'Alphabetical (Z-A)')
+          ])
+        ),
+        loading ? 
+          React.createElement('div', { className: 'loading' },
+            React.createElement('div', { className: 'spinner' })
+          ) :
+          React.createElement('table', null,
+            React.createElement('thead', null,
+              React.createElement('tr', null,
+                React.createElement('th', null, 'Sentence'),
+                React.createElement('th', null, 'Frequency'),
+                React.createElement('th', null, 'Distribution')
+              )
+            ),
+            React.createElement('tbody', null,
+              data.map((item, index) =>
+                React.createElement('tr', { key: index },
+                  React.createElement('td', null, 
+                    React.createElement('div', { className: 'sentence-cell' }, item.sentence)
+                  ),
+                  React.createElement('td', null,
+                    React.createElement('span', { className: 'badge' }, item.cnt)
+                  ),
+                  React.createElement('td', null,
+                    React.createElement('div', { className: 'progress-bar' },
+                      React.createElement('div', { 
+                        className: 'progress-value', 
+                        style: { width: `${(item.cnt / maxCount) * 100}%` }
+                      })
+                    )
+                  )
+                )
+              )
+            )
+          )
+      ),
+      React.createElement('div', { className: 'pagination' }, renderPagination())
+    );
+  }
+  
+  function App() {
+    const [data, setData] = useState({ data: [], total: 0, maxCount: 0 });
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [orderBy, setOrderBy] = useState('cnt_desc');
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    
+    // Initialize search term from URL parameters
+    useEffect(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchParam = urlParams.get('search');
+      if (searchParam) {
+        setSearchTerm(searchParam);
+        setDebouncedSearch(searchParam);
+      }
+      // Handle keyword search redirection - if keyword parameter is present,
+      // redirect to contents.html with the keyword
+      const keywordParam = urlParams.get('keyword');
+      if (keywordParam) {
+        window.location.href = `contents.html?keyword=${encodeURIComponent(keywordParam)}`;
+      }
+    }, []);
+    
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setDebouncedSearch(searchTerm);
+      }, 500);
+      return () => clearTimeout(timer);
+    }, [searchTerm]);
+    
+    useEffect(() => {
+      setPage(1);
+    }, [debouncedSearch, orderBy]);
+    
+    useEffect(() => {
+      setLoading(true);
+      fetch(`api.php?action=sentences&page=${page}&search=${debouncedSearch}&order=${orderBy}`)
+        .then(response => response.json())
+        .then(result => {
+          setData({
+            data: result.data,
+            total: result.total,
+            maxCount: result.maxCount
+          });
+          setTotalPages(Math.ceil(result.total / result.perPage));
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error(error);
+          setLoading(false);
+        });
+    }, [page, debouncedSearch, orderBy]);
+    
+    // Update URL when search changes
+    useEffect(() => {
+      if (debouncedSearch) {
+        const url = new URL(window.location);
+        url.searchParams.set('search', debouncedSearch);
+        window.history.pushState({}, '', url);
+      } else {
+        const url = new URL(window.location);
+        url.searchParams.delete('search');
+        window.history.pushState({}, '', url);
+      }
+    }, [debouncedSearch]);
+    
+    return React.createElement(
+      SentencesTable, {
+        data: data.data,
+        maxCount: data.maxCount,
+        loading,
+        searchTerm,
+        onSearchChange: setSearchTerm,
+        orderBy,
+        onOrderChange: setOrderBy,
+        page,
+        onPageChange: setPage,
+        totalPages
+      }
+    );
+  }
+  
+  const container = document.getElementById('sentences-table');
+  const root = createRoot(container);
+  root.render(React.createElement(App));
+</script>
+</body>
+</html>

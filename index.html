@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mantine/core@7.3.0/esm/index.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .container { max-width: 1600px; margin: auto; padding: 1rem; }
+    .tag-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .keyword-tag {
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid #e9ecef;
+      background-color: white;
+    }
+    .keyword-tag:hover {
+      background-color: #f1f3f5;
+      transform: translateY(-2px);
+    }
+    
+    /* Network graph styles */
+    .network-container {
+      background-color: white;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 1px solid #e9ecef;
+      margin-bottom: 1.5rem;
+      position: relative;
+      height: 500px;
+      overflow: hidden;
+    }
+    
+    .node {
+      cursor: pointer;
+    }
+    
+    .link {
+      stroke-opacity: 0.6;
+      pointer-events: none;
+    }
+    
+    .tooltip {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.9);
+      border-radius: 4px;
+      padding: 6px 10px;
+      border: 1px solid #ddd;
+      font-size: 12px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      z-index: 10;
+    }
+    
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(255, 255, 255, 0.8);
+      z-index: 5;
+    }
+    
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left: 4px solid #339af0;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .controls {
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+    
+    .controls button {
+      padding: 5px 10px;
+      border: 1px solid #ced4da;
+      background-color: white;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    
+    .controls button:hover {
+      background-color: #f1f3f5;
+    }
+  </style>
+  <!-- Add D3.js for network visualization -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Dashboard</h1>
+    <div class="navbar">
+      <a href="index.html">Dashboard</a>
+      <a href="contents.html">View Contents</a>
+      <a href="words.html">View Words Statistics</a>
+      <a href="sentences.html">View Sentences Statistics</a>
+      <a href="begrippenlijst.html">Begrippenlijst</a>
+      <a href="listVideos.html">Video Selector</a>
+  
+    </div>
+  <div id="stats-grid"></div>
+</div>
+
+<script type="module">
+  import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+  import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+
+  // Create plain UI without depending on Mantine's provider system
+  function StatsGrid({ data }) {
+    const stats = [
+      {
+        title: 'Total Index Entries',
+        value: data.hh_index.toLocaleString(),
+        description: 'Indexed web pages',
+        icon: '📄',
+        color: '#4dabf7'
+      },
+      {
+        title: 'Unique Sentences',
+        value: data.hh_sentences.toLocaleString(),
+        description: 'Analyzed sentences',
+        icon: '📝',
+        color: '#40c057'
+      },
+      {
+        title: 'Word Occurrences',
+        value: data.hh_words.toLocaleString(),
+        description: 'Total words analyzed',
+        icon: '🔤',
+        color: '#fab005'
+      },
+      {
+        title: 'Unique Lemmas',
+        value: data.unique_lemmas.toLocaleString(),
+        description: 'Distinct word lemmas',
+        icon: '📚',
+        color: '#be4bdb'
+      }
+    ];
+    
+    const gridStyle = {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+      gap: '1rem',
+      marginBottom: '2rem'
+    };
+
+    return React.createElement(
+      'div',
+      null,
+      React.createElement(
+        'div',
+        { style: gridStyle },
+        stats.map((stat, index) => {
+          const cardStyle = {
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '1.5rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            border: '1px solid #e9ecef',
+            display: 'flex',
+            justifyContent: 'space-between'
+          };
+
+          const iconContainerStyle = {
+            width: '80px',
+            height: '80px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: `${stat.color}20`,
+            color: stat.color,
+            fontSize: '2rem'
+          };
+
+          return React.createElement(
+            'div',
+            { key: index, style: cardStyle },
+            React.createElement(
+              'div',
+              null,
+              React.createElement('div', { style: { color: '#868e96', fontSize: '0.875rem', marginBottom: '0.5rem' } }, stat.title),
+              React.createElement('div', { style: { fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '0.5rem' } }, stat.value),
+              React.createElement('div', { style: { color: '#868e96', fontSize: '0.875rem' } }, stat.description)
+            ),
+            React.createElement(
+              'div', 
+              { style: iconContainerStyle },
+              stat.icon
+            )
+          );
+        })
+      ),
+      // Add additional statistics panel that compares lemmas to total words
+      React.createElement(
+        'div',
+        {
+          style: {
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '1.5rem',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+            border: '1px solid #e9ecef',
+            marginBottom: '1.5rem'
+          }
+        },
+        React.createElement('h2', { style: { marginTop: 0 } }, 'Lemmatization Statistics'),
+        React.createElement(
+          'div',
+          {
+            style: {
+              display: 'flex',
+              alignItems: 'center',
+              marginBottom: '1rem'
+            }
+          },
+          React.createElement(
+            'div',
+            { style: { flex: 1 } },
+            React.createElement('div', { style: { fontSize: '0.875rem', marginBottom: '0.5rem' } }, 'Lemma Coverage'),
+            React.createElement(
+              'div',
+              { 
+                style: {
+                  height: '24px',
+                  backgroundColor: '#e9ecef',
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }
+              },
+              React.createElement(
+                'div',
+                {
+                  style: {
+                    width: `${(data.unique_lemmas / data.hh_words) * 100}%`,
+                    height: '100%',
+                    backgroundColor: '#be4bdb'
+                  }
+                }
+              )
+            )
+          ),
+          React.createElement(
+            'div',
+            { style: { marginLeft: '1rem', fontSize: '1.25rem', fontWeight: 'bold' } },
+            `${((data.unique_lemmas / data.hh_words) * 100).toFixed(2)}%`
+          )
+        ),
+        React.createElement(
+          'p',
+          null,
+          `This corpus contains ${data.unique_lemmas.toLocaleString()} unique lemmas out of ${data.hh_words.toLocaleString()} total word occurrences. The ratio of unique lemmas to total words provides insight into the vocabulary richness of the analyzed text.`
+        )
+      )
+    );
+  }
+  
+  // Network Graph component using D3.js for visualization
+  function NetworkGraph({ data, onNodeClick, onConnectionClick }) {
+    const containerRef = useRef(null);
+    const tooltipRef = useRef(null);
+    const simulationRef = useRef(null);
+    const svgRef = useRef(null);
+    
+    // Create or update visualization when data changes
+    useEffect(() => {
+      if (!data || !data.nodes || !data.links || !containerRef.current) return;
+      
+      // Clear previous visualization if any
+      d3.select(containerRef.current).select("svg").remove();
+      
+      try {
+        // Setup dimensions
+        const width = containerRef.current.clientWidth;
+        const height = containerRef.current.clientHeight;
+        
+        // Find maximum count and connection weight for scaling
+        const maxCount = Math.max(...data.nodes.map(d => d.count));
+        const maxWeight = data.links.length > 0 ? Math.max(...data.links.map(d => d.weight)) : 1;
+        
+        // Create SVG container
+        const svg = d3.select(containerRef.current)
+          .append("svg")
+          .attr("width", width)
+          .attr("height", height);
+        
+        svgRef.current = svg;
+          
+        // Add a background rectangle to capture zoom events
+        svg.append("rect")
+          .attr("width", width)
+          .attr("height", height)
+          .attr("fill", "none")
+          .attr("pointer-events", "all");
+        
+        // Create main container group that will be transformed during zoom
+        const g = svg.append("g");
+          
+        // Create tooltip
+        const tooltip = d3.select(tooltipRef.current);
+        
+        // Scaling function for node size based on count
+        const nodeRadius = d => Math.max(5, Math.sqrt(d.count / maxCount) * 25);
+        
+        // Color scale for nodes based on count
+        const colorScale = d3.scaleLinear()
+          .domain([0, maxCount * 0.5, maxCount])
+          .range(["#4dabf7", "#be4bdb", "#fd7e14"]);
+        
+        // Create a node object map for fast lookups
+        // This is crucial for large datasets to ensure that all nodes referenced in links exist
+        const nodeMap = {};
+        data.nodes.forEach(node => {
+          nodeMap[node.id] = node;
+        });
+        
+        // Filter links to only include those that reference valid nodes
+        const validLinks = data.links.filter(link => 
+          typeof link.source === 'string' && 
+          typeof link.target === 'string' && 
+          nodeMap[link.source] && 
+          nodeMap[link.target]
+        );
+        
+        // Process links to replace string references with actual node objects
+        // This prevents the "node not found" error
+        const processedLinks = validLinks.map(link => ({
+          source: nodeMap[link.source],
+          target: nodeMap[link.target],
+          weight: link.weight
+        }));
+        
+        // Create the simulation with forces
+        const simulation = d3.forceSimulation(data.nodes)
+          .force("link", d3.forceLink(processedLinks)
+              .id(d => d.id)
+              .distance(d => 120 - Math.min(60, d.weight * 5)) // Cap the minimum distance
+              .strength(d => Math.min(0.7, d.weight / maxWeight * 0.7))) // Cap the maximum strength
+          .force("charge", d3.forceManyBody()
+              .strength(-300)
+              .distanceMin(10)
+              .distanceMax(500))
+          .force("center", d3.forceCenter(width / 2, height / 2))
+          .force("collision", d3.forceCollide().radius(d => nodeRadius(d) + 10))
+          .alphaDecay(0.01) // Slower decay for more stable positioning
+          .alphaTarget(0.1); // Keep simulation active with a small alpha target to handle large datasets better
+        
+        // Store reference to stop simulation when component unmounts
+        simulationRef.current = simulation;
+        
+        // Create links (lines between nodes)
+        const links = g.append("g")
+          .attr("class", "links")
+          .selectAll("line")
+          .data(processedLinks)
+          .enter()
+          .append("line")
+          .attr("class", "link")
+          .style("stroke", "#aaa")
+          .style("stroke-width", d => Math.max(1, Math.min(8, d.weight * 1.5 / maxWeight))); // Cap the maximum width
+        
+        // Create connection point group (dots on the middle of links)
+        const connectionPoints = g.append("g")
+          .attr("class", "connection-points")
+          .selectAll("circle")
+          .data(processedLinks)
+          .enter()
+          .append("circle")
+          .attr("r", 5)
+          .style("fill", "#4c6ef5")
+          .style("stroke", "white")
+          .style("stroke-width", 1)
+          .style("cursor", "pointer")
+          .style("opacity", 0.8)
+          .on("mouseover", function(event, d) {
+            // Show tooltip for connection point
+            tooltip.style("opacity", 1)
+              .html(`<strong>Combined Search:</strong><br>${d.source.id} + ${d.target.id}<br>Weight: ${d.weight}`)
+              .style("left", (event.offsetX + 10) + "px")
+              .style("top", (event.offsetY + 10) + "px");
+              
+            // Highlight the connection point
+            d3.select(this)
+              .transition()
+              .duration(200)
+              .attr("r", 7)
+              .style("opacity", 1);
+          })
+          .on("mouseout", function() {
+            // Hide tooltip
+            tooltip.style("opacity", 0);
+            
+            // Reset connection point size
+            d3.select(this)
+              .transition()
+              .duration(200)
+              .attr("r", 5)
+              .style("opacity", 0.8);
+          })
+          .on("click", (event, d) => {
+            event.stopPropagation(); // Prevent propagation to the zoom handler
+            // Handle connection click with both connected keywords
+            onConnectionClick(d.source.id, d.target.id);
+          });
+        
+        // Create node groups
+        const nodeGroups = g.append("g")
+          .attr("class", "nodes")
+          .selectAll(".node")
+          .data(data.nodes)
+          .enter()
+          .append("g")
+          .attr("class", "node");
+
+        // Add circles to nodes
+        const circles = nodeGroups.append("circle")
+          .attr("r", nodeRadius)
+          .style("fill", d => colorScale(d.count))
+          .style("stroke", d => d3.color(colorScale(d.count)).darker(0.5))
+          .style("stroke-width", 2)
+          .on("mouseover", function(event, d) {
+            // Show tooltip with keyword info
+            tooltip.style("opacity", 1)
+              .html(`<strong>${d.id}</strong><br>Count: ${d.count}`)
+              .style("left", (event.offsetX + 10) + "px")
+              .style("top", (event.offsetY + 10) + "px");
+              
+            // Highlight node and connections
+            d3.select(this).style("stroke-width", 3);
+            
+            // Highlight connected links and nodes
+            links.style("stroke-opacity", link => 
+              link.source.id === d.id || link.target.id === d.id ? 1 : 0.2
+            );
+            
+            // Highlight connection points
+            connectionPoints.style("opacity", cp => 
+              cp.source.id === d.id || cp.target.id === d.id ? 1 : 0.3
+            );
+            
+            nodeGroups.style("opacity", node => 
+              node.id === d.id || 
+              processedLinks.some(link => 
+                (link.source.id === d.id && link.target.id === node.id) || 
+                (link.target.id === d.id && link.source.id === node.id)
+              ) ? 1 : 0.4
+            );
+          })
+          .on("mouseout", function() {
+            // Hide tooltip
+            tooltip.style("opacity", 0);
+            
+            // Reset highlighting
+            d3.select(this).style("stroke-width", 2);
+            links.style("stroke-opacity", 0.6);
+            connectionPoints.style("opacity", 0.8);
+            nodeGroups.style("opacity", 1);
+          })
+          .on("click", (event, d) => {
+            event.stopPropagation(); // Prevent propagation to the zoom handler
+            onNodeClick(d.id);
+          });
+
+        // Implement drag behavior specifically for nodes
+        const drag = d3.drag()
+          .on("start", (event, d) => {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+          })
+          .on("drag", (event, d) => {
+            d.fx = event.x;
+            d.fy = event.y;
+          })
+          .on("end", (event, d) => {
+            if (!event.active) simulation.alphaTarget(0.1);
+            // Keep nodes fixed where user dragged them for better stability
+            // (don't set fx/fy to null)
+          });
+
+        circles.call(drag);
+        
+        // Add labels to nodes (only for nodes with higher counts)
+        nodeGroups.append("text")
+          .text(d => d.count > maxCount * 0.2 ? d.id : '') // Show fewer labels with large datasets
+          .attr("dy", d => -nodeRadius(d) - 5)
+          .attr("text-anchor", "middle")
+          .attr("pointer-events", "none") // Make labels non-interactive
+          .style("font-size", d => Math.min(14, 10 + d.count / maxCount * 6) + "px")
+          .style("font-weight", "bold")
+          .style("stroke", "white")
+          .style("stroke-width", "0.5px")
+          .style("paint-order", "stroke") // Draw stroke behind fill for better visibility
+          .style("fill", "#333");
+        
+        // Define zoom behavior
+        const zoom = d3.zoom()
+          .scaleExtent([0.2, 4])
+          .on("zoom", (event) => {
+            g.attr("transform", event.transform);
+          });
+          
+        // Apply zoom behavior to SVG
+        svg.call(zoom);
+        
+        // Update positions on each simulation tick
+        simulation.on("tick", () => {
+          try {
+            // Constrain nodes to the visible area with some padding
+            data.nodes.forEach(d => {
+              const r = nodeRadius(d) + 10;
+              d.x = Math.max(r, Math.min(width - r, d.x || width/2));
+              d.y = Math.max(r, Math.min(height - r, d.y || height/2));
+            });
+            
+            // Update link positions
+            links
+              .attr("x1", d => d.source.x)
+              .attr("y1", d => d.source.y)
+              .attr("x2", d => d.target.x)
+              .attr("y2", d => d.target.y);
+            
+            // Update connection point positions (middle of each link)
+            connectionPoints
+              .attr("cx", d => (d.source.x + d.target.x) / 2)
+              .attr("cy", d => (d.source.y + d.target.y) / 2);
+              
+            // Update node group positions
+            nodeGroups.attr("transform", d => `translate(${d.x},${d.y})`);
+          } catch (err) {
+            console.error("Error during simulation tick:", err);
+            // Stop the simulation if an error occurs to prevent endless errors
+            simulation.stop();
+          }
+        });
+        
+        // Heat up the simulation initially for better layout
+        simulation.alpha(1).restart();
+        
+        // For large datasets, stop the simulation after a certain time
+        if (data.nodes.length > 100) {
+          setTimeout(() => {
+            simulation.alphaTarget(0).alpha(0.1);
+          }, 5000); // Let it run for 5 seconds then slow down
+        }
+        
+      } catch (err) {
+        console.error("Error rendering graph:", err);
+      }
+      
+      // Cleanup function
+      return () => {
+        if (simulationRef.current) {
+          simulationRef.current.stop();
+        }
+      };
+    }, [data, onNodeClick, onConnectionClick]);
+    
+    // Reset zoom and center the graph
+    const resetView = () => {
+      if (svgRef.current) {
+        svgRef.current
+          .transition()
+          .duration(750)
+          .call(
+            d3.zoom().transform,
+            d3.zoomIdentity
+          );
+          
+        // Reheat the simulation
+        if (simulationRef.current) {
+          simulationRef.current.alpha(1).restart();
+        }
+      }
+    };
+    
+    return React.createElement(
+      'div',
+      { className: 'network-container', ref: containerRef },
+      React.createElement('div', { className: 'tooltip', ref: tooltipRef }),
+      React.createElement(
+        'div',
+        { className: 'controls' },
+        React.createElement('button', { onClick: resetView }, 'Reset View')
+      ),
+      !data && React.createElement(
+        'div',
+        { className: 'loading-overlay' },
+        React.createElement('div', { className: 'spinner' })
+      )
+    );
+  }
+  
+  // Dashboard App component
+  function Dashboard() {
+    const [dashboardData, setDashboardData] = useState(null);
+    const [networkData, setNetworkData] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [networkSize, setNetworkSize] = useState('large');
+    
+    useEffect(() => {
+      // Fetch dashboard stats
+      fetch('api.php?action=dashboard')
+        .then(response => response.json())
+        .then(data => {
+          setDashboardData(data);
+        })
+        .catch(error => {
+          console.error("Error loading dashboard data:", error);
+        });
+      
+      // Load network data with appropriate size
+      loadNetworkData(networkSize);
+    }, [networkSize]);
+    
+    const loadNetworkData = (size) => {
+      setLoading(true);
+      
+      // Determine limit and minimum connections based on selected size
+      let limit, minConnections;
+      switch (size) {
+        case 'small':
+          limit = 30;
+          minConnections = 3;
+          break;
+        case 'medium':
+          limit = 50;
+          minConnections = 2;
+          break;
+        case 'large':
+          limit = 100;
+          minConnections = 2;
+          break;
+        default:
+          limit = 50;
+          minConnections = 2;
+      }
+      
+      fetch(`api.php?action=keyword_connections&limit=${limit}&min_connections=${minConnections}`)
+        .then(response => response.json())
+        .then(data => {
+          setNetworkData(data);
+          setLoading(false);
+        })
+        .catch(error => {
+          console.error("Error loading keyword network data:", error);
+          setLoading(false);
+        });
+    };
+    
+    const handleNodeClick = (keyword) => {
+      // Navigate to contents.html with keyword filter
+      window.location.href = `contents.html?keyword=${encodeURIComponent(keyword)}`;
+    };
+    
+    const handleConnectionClick = (keyword1, keyword2) => {
+      // Navigate to contents.html with both keywords as filter
+      window.location.href = `contents.html?keyword=${encodeURIComponent(keyword1)},${encodeURIComponent(keyword2)}`;
+    };
+    
+    return React.createElement(
+      'div',
+      null,
+      dashboardData && React.createElement(StatsGrid, { data: dashboardData }),
+      React.createElement('h2', null, 'Keyword Connections'),
+      React.createElement(
+        'div',
+        { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' } },
+        React.createElement(
+          'p',
+          { style: { margin: 0 } },
+          'This visualization shows connections between keywords that appear together in the same content. Larger circles represent more frequent keywords, and thicker lines represent stronger connections. Click on blue connection points to search for content containing both connected keywords.'
+        ),
+        React.createElement(
+          'div',
+          { style: { display: 'flex', gap: '10px', alignItems: 'center' } },
+          React.createElement('span', null, 'Network size:'),
+          React.createElement(
+            'select',
+            {
+              value: networkSize,
+              onChange: (e) => setNetworkSize(e.target.value),
+              style: { padding: '5px 10px', borderRadius: '4px' }
+            },
+            React.createElement('option', { value: 'small' }, 'Small (30 nodes)'),
+            React.createElement('option', { value: 'medium' }, 'Medium (50 nodes)'),
+            React.createElement('option', { value: 'large' }, 'Large (100 nodes)')
+          )
+        )
+      ),
+      React.createElement(NetworkGraph, {
+        data: networkData,
+        loading: loading,
+        onNodeClick: handleNodeClick,
+        onConnectionClick: handleConnectionClick
+      })
+    );
+  }
+  
+  // Render the dashboard
+  const container = document.getElementById('stats-grid');
+  const root = createRoot(container);
+  root.render(React.createElement(Dashboard));
+  
+  // Remove the old keyword-cloud element since we've integrated it into the Dashboard
+  const oldContainer = document.getElementById('keyword-cloud');
+  if (oldContainer) {
+    oldContainer.parentNode.removeChild(oldContainer.previousElementSibling); // Remove the h2
+    oldContainer.parentNode.removeChild(oldContainer);
+  }
+</script>
+</body>
+</html>
