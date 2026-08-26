@@ -238,12 +238,8 @@
   </div>
    
   <div class="navbar">
-    <a href="index.html">Dashboard</a>
     <a href="contents.html">View Contents</a>
-    <a href="words.html">View Words Statistics</a>
-    <a href="sentences.html">View Sentences Statistics</a>
-    <a href="begrippenlijst.html">Begrippenlijst</a>
-    <a href="listVideos.html">Video Selector</a>
+    <a href="overview_hh.html">HH Interface</a>
 
   </div>
   <div id="contents-table"></div>
@@ -1793,9 +1789,11 @@
     );
   }
   
-  function ContentsTable({ loading, data, searchTerm, onSearchChange, page, totalPages, onPageChange, keywordSearch, sortField, sortOrder, onSort, statusFilter, onStatusFilterChange, onDataUpdate }) {
+  function ContentsTable({ loading, data, searchTerm, onSearchChange, page, totalPages, onPageChange, keywordSearch, sortField, sortOrder, onSort, statusFilter, onStatusFilterChange, labelFilter, onLabelFilterChange, availableLabels, onDataUpdate }) {
     const [expandedRowId, setExpandedRowId] = useState(null);
     const [updatingStatus, setUpdatingStatus] = useState({});
+    const [updatingNaam, setUpdatingNaam] = useState({});
+    const [naamDebounceTimeouts, setNaamDebounceTimeouts] = useState({});
     
     const handleStatusToggle = async (id, currentStatus) => {
       // Prevent multiple simultaneous updates for the same ID
@@ -1805,10 +1803,16 @@
       setUpdatingStatus(prev => ({ ...prev, [id]: true }));
       
       try {
-        // Toggle the status: if current is 1 (klaar), set to 0 (niet klaar), and vice versa
-        // Ensure currentStatus is treated as a number
+        // Cycle through statuses: 0 -> 1 -> 2 -> 0
         const currentStatusNum = parseInt(currentStatus) || 0;
-        const newStatus = currentStatusNum === 1 ? 0 : 1;
+        let newStatus;
+        if (currentStatusNum === 0) {
+          newStatus = 1; // Niet Klaar -> Klaar
+        } else if (currentStatusNum === 1) {
+          newStatus = 2; // Klaar -> Video goedgekeurd
+        } else {
+          newStatus = 0; // Video goedgekeurd -> Niet Klaar
+        }
         
         const response = await fetch('api.php?action=update_content_status', {
           method: 'POST',
@@ -1845,6 +1849,82 @@
       }
     };
     
+    const handleNaamChange = (id, value) => {
+      // Update the local data immediately for responsive UI
+      if (onDataUpdate) {
+        onDataUpdate(id, { naam: value });
+      }
+      
+      // Clear existing timeout for this item
+      if (naamDebounceTimeouts[id]) {
+        clearTimeout(naamDebounceTimeouts[id]);
+      }
+      
+      // Set new timeout for auto-save
+      const timeoutId = setTimeout(() => {
+        handleNaamSave(id, value);
+      }, 500);
+      
+      setNaamDebounceTimeouts(prev => ({
+        ...prev,
+        [id]: timeoutId
+      }));
+    };
+    
+    const handleNaamSave = async (id, value) => {
+      // Prevent multiple simultaneous updates for the same ID
+      if (updatingNaam[id]) return;
+      
+      // Clear the timeout since we're saving now
+      if (naamDebounceTimeouts[id]) {
+        clearTimeout(naamDebounceTimeouts[id]);
+        setNaamDebounceTimeouts(prev => {
+          const newState = { ...prev };
+          delete newState[id];
+          return newState;
+        });
+      }
+      
+      // Set updating state
+      setUpdatingNaam(prev => ({ ...prev, [id]: true }));
+      
+      try {
+        const response = await fetch('api.php?action=update_content_naam', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            id: id,
+            naam: value
+          }),
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          // Update confirmed - data should already be updated locally
+          if (onDataUpdate) {
+            onDataUpdate(id, { naam: result.naam });
+          }
+        } else {
+          alert('Failed to update name: ' + (result.error || 'Unknown error'));
+          // Revert the local change on error
+          // Note: You might want to fetch fresh data here
+        }
+      } catch (error) {
+        console.error('Error updating naam:', error);
+        alert('Failed to update name: ' + error.message);
+      } finally {
+        // Clear updating state
+        setUpdatingNaam(prev => {
+          const newState = { ...prev };
+          delete newState[id];
+          return newState;
+        });
+      }
+    };
+    
     const parseLabels = (labelsJson) => {
       try {
         if (!labelsJson) return [];
@@ -1865,6 +1945,17 @@
       if (priorityNum <= 3) return 'priority-low';
       if (priorityNum <= 7) return 'priority-medium';
       return 'priority-high';
+    };
+    
+    const calculateNaamCounts = (data) => {
+      const counts = {};
+      data.forEach(item => {
+        if (item.naam && item.naam.trim() !== '') {
+          const naam = item.naam.trim();
+          counts[naam] = (counts[naam] || 0) + 1;
+        }
+      });
+      return counts;
     };
     
     const renderKeywordBanner = () => {
@@ -1905,6 +1996,67 @@
             fontSize: '0.875rem'
           }
         }, 'Clear Filter')
+      );
+    };
+    
+    const renderNaamCounts = () => {
+      const naamCounts = calculateNaamCounts(data);
+      const countEntries = Object.entries(naamCounts);
+      
+      if (countEntries.length === 0) {
+        return React.createElement(
+          'div',
+          {
+            style: {
+              backgroundColor: '#f8f9fa',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              marginBottom: '1rem',
+              fontSize: '0.875rem',
+              color: '#6c757d',
+              fontStyle: 'italic'
+            }
+          },
+          'No names assigned yet'
+        );
+      }
+      
+      // Sort by count descending
+      countEntries.sort((a, b) => b[1] - a[1]);
+      
+      return React.createElement(
+        'div',
+        {
+          style: {
+            backgroundColor: '#e9ecef',
+            padding: '8px 12px',
+            borderRadius: '4px',
+            marginBottom: '1rem',
+            fontSize: '0.875rem'
+          }
+        },
+        React.createElement('strong', null, 'Name counts: '),
+        countEntries.map((entry, index) => {
+          const [naam, count] = entry;
+          return React.createElement(
+            'span',
+            {
+              key: naam,
+              style: {
+                display: 'inline-block',
+                backgroundColor: '#339af0',
+                color: 'white',
+                padding: '2px 6px',
+                borderRadius: '12px',
+                marginRight: '6px',
+                marginBottom: '4px',
+                fontSize: '0.75rem',
+                fontWeight: 'bold'
+              }
+            },
+            `${naam}: ${count}`
+          );
+        })
       );
     };
     
@@ -1959,16 +2111,25 @@
     
     // Helper function to get status display
     const getStatusDisplay = (status) => {
-      // Convert to number and check if it's 1
-      return parseInt(status) === 1 ? "Klaar" : "Niet Klaar";
+      const statusNum = parseInt(status);
+      if (statusNum === 1) return "Klaar";
+      if (statusNum === 2) return "Video goedgekeurd";
+      return "Niet Klaar";
     };
     
     // Helper function for status styles
     const getStatusStyle = (status) => {
-      // Convert to number and check if it's 1
-      const isKlaar = parseInt(status) === 1;
+      const statusNum = parseInt(status);
+      let backgroundColor = "#dc3545"; // Default: red for "Niet Klaar"
+      
+      if (statusNum === 1) {
+        backgroundColor = "#28a745"; // Green for "Klaar"
+      } else if (statusNum === 2) {
+        backgroundColor = "#17a2b8"; // Blue for "Video goedgekeurd"
+      }
+      
       return {
-        backgroundColor: isKlaar ? "#28a745" : "#dc3545",
+        backgroundColor: backgroundColor,
         color: "white",
         padding: "4px 8px",
         borderRadius: "4px",
@@ -2026,10 +2187,37 @@
               },
               React.createElement('option', { value: "" }, "All Status"),
               React.createElement('option', { value: "1" }, "Klaar"),
+              React.createElement('option', { value: "2" }, "Video goedgekeurd"),
               React.createElement('option', { value: "0" }, "Niet Klaar")
+            )
+          ),
+
+          // Label filter dropdown (new)
+          React.createElement(
+            'div',
+            { style: { minWidth: '150px' } },
+            React.createElement(
+              'select',
+              {
+                value: labelFilter,
+                onChange: (e) => onLabelFilterChange(e.target.value),
+                style: {
+                  padding: '0.5rem',
+                  border: '1px solid #ced4da',
+                  borderRadius: '0.25rem',
+                  width: '100%'
+                }
+              },
+              React.createElement('option', { value: "" }, "All Labels"),
+              availableLabels.map((label, idx) =>
+                React.createElement('option', { key: idx, value: label }, label)
+              )
             )
           )
         ),
+        
+        // Add naam counter display
+        renderNaamCounts(),
         
         loading ? 
           React.createElement('div', { className: 'loading' },
@@ -2053,6 +2241,8 @@
                 ),
                 // Add Status header column
                 React.createElement('th', null, 'Status'),
+                // Add Naam header column
+                React.createElement('th', null, 'Naam'),
                 React.createElement('th', null, 'Actions')
               )
             ),
@@ -2105,6 +2295,27 @@
                         title: updatingStatus[item.id] ? 'Updating...' : 'Click to toggle status'
                       }, updatingStatus[item.id] ? 'Updating...' : getStatusDisplay(item.status))
                     ),
+                    // Add Naam column with editable input field
+                    React.createElement('td', null,
+                      React.createElement('input', {
+                        type: 'text',
+                        value: item.naam || '',
+                        placeholder: 'Enter name...',
+                        style: {
+                          width: '100%',
+                          padding: '4px 8px',
+                          border: updatingNaam[item.id] ? '1px solid #339af0' : '1px solid #ced4da',
+                          borderRadius: '4px',
+                          fontSize: '0.875rem',
+                          backgroundColor: updatingNaam[item.id] ? '#f0f8ff' : 'white',
+                          opacity: updatingNaam[item.id] ? 0.8 : 1
+                        },
+                        onInput: (e) => handleNaamChange(item.id, e.target.value),
+                        onBlur: (e) => handleNaamSave(item.id, e.target.value),
+                        disabled: updatingNaam[item.id],
+                        title: updatingNaam[item.id] ? 'Saving...' : 'Click to edit name'
+                      })
+                    ),
                     React.createElement('td', null,
                       React.createElement('button', {
                         className: 'expand-btn',
@@ -2117,7 +2328,7 @@
                 if (expandedRowId === item.id) {
                   rows.push(
                     React.createElement('tr', { key: `drawer-${item.id}` },
-                      React.createElement('td', { colSpan: 7, style: { padding: 0 } }, // Update colspan to 7 to include new column
+                      React.createElement('td', { colSpan: 8, style: { padding: 0 } }, // Update colspan to 8 to include new Naam column
                         React.createElement(ExtendedVideoDrawer, {
                           lemma: null,
                           video: null,
@@ -2148,6 +2359,8 @@
     const [debouncedSearch, setDebouncedSearch] = useState('');
     const [keywordSearch, setKeywordSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState(''); // New state for status filtering
+    const [labelFilter, setLabelFilter] = useState(''); // New state for label filtering
+    const [availableLabels, setAvailableLabels] = useState([]); // Store available labels
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [sortField, setSortField] = useState('priority');
@@ -2161,6 +2374,18 @@
       );
     };
     
+    // Fetch available labels on mount
+    useEffect(() => {
+      fetch('api.php?action=get_unique_labels')
+        .then(response => response.json())
+        .then(result => {
+          if (result.labels) {
+            setAvailableLabels(result.labels);
+          }
+        })
+        .catch(error => console.error('Failed to fetch labels:', error));
+    }, []);
+
     useEffect(() => {
       const urlParams = new URLSearchParams(window.location.search);
       const searchParam = urlParams.get('search');
@@ -2168,26 +2393,31 @@
       const sortFieldParam = urlParams.get('sort');
       const sortOrderParam = urlParams.get('order');
       const statusParam = urlParams.get('status');
-      
+      const labelParam = urlParams.get('label');
+
       if (searchParam) {
         setSearchTerm(searchParam);
         setDebouncedSearch(searchParam);
       }
-      
+
       if (keywordParam) {
         setKeywordSearch(keywordParam);
       }
-      
+
       if (sortFieldParam) {
         setSortField(sortFieldParam);
       }
-      
+
       if (sortOrderParam) {
         setSortOrder(sortOrderParam);
       }
-      
+
       if (statusParam) {
         setStatusFilter(statusParam);
+      }
+
+      if (labelParam) {
+        setLabelFilter(labelParam);
       }
     }, []);
     
@@ -2200,29 +2430,33 @@
     
     useEffect(() => {
       setPage(1);
-    }, [debouncedSearch, keywordSearch, statusFilter]);
+    }, [debouncedSearch, keywordSearch, statusFilter, labelFilter]);
     
     useEffect(() => {
       setLoading(true);
-      
+
       let apiUrl = `api.php?action=contents&page=${page}`;
-      
+
       if (debouncedSearch) {
         apiUrl += `&search=${debouncedSearch}`;
       }
-      
+
       if (keywordSearch) {
         apiUrl += `&keyword=${keywordSearch}`;
       }
-      
+
       if (statusFilter !== "") {
         apiUrl += `&status=${statusFilter}`;
       }
-      
+
+      if (labelFilter !== "") {
+        apiUrl += `&label=${encodeURIComponent(labelFilter)}`;
+      }
+
       if (sortField && sortOrder) {
         apiUrl += `&sort=${sortField}&order=${sortOrder}`;
       }
-      
+
       fetch(apiUrl)
         .then(response => response.json())
         .then(result => {
@@ -2234,37 +2468,43 @@
           console.error(error);
           setLoading(false);
         });
-    }, [page, debouncedSearch, keywordSearch, statusFilter, sortField, sortOrder]);
+    }, [page, debouncedSearch, keywordSearch, statusFilter, labelFilter, sortField, sortOrder]);
     
     useEffect(() => {
       const url = new URL(window.location);
-      
+
       if (debouncedSearch) {
         url.searchParams.set('search', debouncedSearch);
       } else {
         url.searchParams.delete('search');
       }
-      
+
       if (statusFilter) {
         url.searchParams.set('status', statusFilter);
       } else {
         url.searchParams.delete('status');
       }
-      
+
+      if (labelFilter) {
+        url.searchParams.set('label', labelFilter);
+      } else {
+        url.searchParams.delete('label');
+      }
+
       if (sortField) {
         url.searchParams.set('sort', sortField);
       } else {
         url.searchParams.delete('sort');
       }
-      
+
       if (sortOrder) {
         url.searchParams.set('order', sortOrder);
       } else {
         url.searchParams.delete('order');
       }
-      
+
       window.history.pushState({}, '', url);
-    }, [debouncedSearch, statusFilter, sortField, sortOrder]);
+    }, [debouncedSearch, statusFilter, labelFilter, sortField, sortOrder]);
     
     const handleSort = (field) => {
       if (sortField === field) {
@@ -2290,6 +2530,9 @@
         onSort: handleSort,
         statusFilter,
         onStatusFilterChange: setStatusFilter,
+        labelFilter,
+        onLabelFilterChange: setLabelFilter,
+        availableLabels,
         onDataUpdate: handleDataUpdate
       }
     );

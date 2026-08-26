@@ -63,6 +63,12 @@ bash unit_test.sh  # Run OpenDutchWordnet unit tests
 - Database: `admin_gebarenoverleg`
 - Charset: `utf8mb4`
 
+### Key Database Tables
+- `hh_index`: Health topics/items (~3485 rows). Each row is a topic from thuisarts.nl. NOT sentences — the variable `total_items` reflects this.
+- `hh_sentences`, `hh_words`, `hh_lemma`, `hh_unique_words`: NLP processing tables
+- `matched_transcriptions`: Links videos to hh_index items. Key fields: `m_file` (.wav filename), `m_transcription` (hh_index.id), `zOg` ('tekst'), `added` ('1')
+- `hh_segments`: Video segments table. Fields: `base_filename`, `segment_number`, `filename`, `location` ('post'). UNIQUE on `(base_filename, segment_number)`. Only `location='post'` entries are kept.
+
 ### Directory Structure
 - `/json/`: Medical condition data files
 - `/json_texts/`: Numbered JSON text files
@@ -70,10 +76,36 @@ bash unit_test.sh  # Run OpenDutchWordnet unit tests
 - `/odwn/`: OpenDutch WordNet XML data
 - `/OpenDutchWordnet/`: Dutch WordNet Python module
 
+### Video/Segment File Locations
+- **Raw videos**: `/web/gebarenoverleg_media/studioFilesMini/raw/` — original full videos (e.g. `M20250826_3368.mp4`)
+- **Post segments**: `/web/gebarenoverleg_media/studioFilesMini/post/` — processed/smaller segment files (e.g. `M20250826_3368_1.mp4`). Primary location for segments.
+- Segment naming: `{base_filename}_{N}.mp4` where N is 1-indexed
+- `base_filename` = `matched_transcriptions.m_file` minus `.wav`
+
+## Key Files
+
+### Overview & Annotation
+- **`overview_hh.html`**: Main overview page. Shows badges with counts, supports filtering (label, status, video, segments). Links to `/hh/subBeta4.html` for annotation. Pagination preserves all filters via state variables (`withVideoFilter`, `withoutVideoFilter`, `segmentsFilter`, etc.). When `withVideo` filter is active, items with segments are prioritized in results.
+- **`subBeta4.html`**: Video annotation/subtitle editor (copied from `/web/zin/`, runs at **24fps** to reduce memory pressure). Loads videos from `post/` first, falls back to `raw/`.
+
+### API Files
+- **`getZinnen.php`**: Main API for overview page. Key actions: `fetchSentences` (paginated with filters), `countZinnen` (badge counts, cached 1hr), `fetchSegments`, `fetchSegmentsByRow`, `syncSegments` (DB counts)
+- **`segment_api.php`**: External segmentation service API:
+  - `GET ?action=list_unsegmented` — videos without segments
+  - `POST ?action=upload_segments` — receives .mp4 files, saves to `post/`, upserts `hh_segments`
+  - `GET ?action=status&base_filename=X` — segment status
+- **`api.php`**: General data API (dashboard, keywords, contents, words, sentences)
+- **`getMT.php`**: Fetches matched_transcription data for a specific item
+
+### Outdated Files (moved, not deleted)
+- `scanVideoSegments.php.outdated`, `populateSegments.php.outdated`, `listVideos.html.outdated`
+
 ## Key Development Patterns
 
-1. **Database Connections**: All scripts use MySQLdb or mysql.connector with utf8mb4 charset
+1. **Database Connections**: PHP files use `include '../mysql_config.php'` with `new mysqli()` and `utf8mb4`
 2. **Error Handling**: Scripts typically use try-except blocks for database operations
 3. **Data Format**: JSON files follow structure: `{url, title, plain_text, sentences[], words[]}`
 4. **API Responses**: PHP API returns JSON with consistent structure
-5. **Frontend**: Uses ES6 modules, React components, and Mantine UI library
+5. **Frontend**: overview_hh.html uses Bootstrap 5 + vanilla JS. Other pages use React/Mantine.
+6. **Segment workflow**: External service polls `list_unsegmented`, downloads videos, segments them, uploads via `upload_segments`. DB (`hh_segments`) is single source of truth.
+7. **Filter state**: All filters tracked as JS globals, passed through every `loadSentences()` call to persist across pagination.

@@ -134,11 +134,19 @@ switch ($action) {
         $status = intval($_GET['status']);
         if ($status === 1) {
           $whereConditions[] = "status = 1"; // Klaar
+        } else if ($status === 2) {
+          $whereConditions[] = "status = 2"; // Video goedgekeurd
         } else if ($status === 0) {
           $whereConditions[] = "(status IS NULL OR status = 0)"; // Niet Klaar
         }
       }
-      
+
+      // Add label filter
+      if (isset($_GET['label']) && !empty($_GET['label'])) {
+        $label = $conn->real_escape_string($_GET['label']);
+        $whereConditions[] = "JSON_SEARCH(labels, 'one', '$label') IS NOT NULL";
+      }
+
       // Combine conditions with AND
       if (!empty($whereConditions)) {
         $whereClause = "WHERE " . implode(" AND ", $whereConditions);
@@ -182,7 +190,7 @@ switch ($action) {
   
     // Add condition if ngt_not_captured is set (non-zero)
     if ($ngt_not_captured) {
-      $whereConditions[] = "(ngt_text IS NOT NULL OR ngt_text2 IS NOT NULL OR ngt_text3 IS NOT NULL OR ngt_text4 IS NOT NULL)";
+      $whereConditions[] = "(ngt_text IS NOT NULL OR ngt_text2 IS NOT NULL OR ngt_text3 IS NOT NULL OR ngt_text4 IS NOT NULL) AND status IS NULL";
     }
   
     if (!empty($search)) {
@@ -234,7 +242,7 @@ switch ($action) {
     // Build the ORDER BY clause
     $orderByClause = "ORDER BY $sortField $sortOrder";
     
-    $result = $conn->query("SELECT * FROM hh_index $whereClause $orderByClause LIMIT $offset, $perPage");
+    $result = $conn->query("SELECT * FROM hh_index $whereClause $orderByClause");
     $rows = [];
     
     // Transform the data into the extended format
@@ -668,6 +676,37 @@ switch ($action) {
       echo json_encode([
         'success' => true,
         'status' => $row['status']
+      ], JSON_UNESCAPED_UNICODE);
+    } else {
+      echo json_encode(['error' => 'Update failed: ' . $conn->error], JSON_UNESCAPED_UNICODE);
+    }
+    break;
+
+  case 'update_content_naam':
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+      echo json_encode(['error' => 'Method not allowed'], JSON_UNESCAPED_UNICODE);
+      break;
+    }
+    
+    $postData = json_decode(file_get_contents('php://input'), true);
+    $id = isset($postData['id']) ? intval($postData['id']) : 0;
+    $naam = isset($postData['naam']) ? $conn->real_escape_string($postData['naam']) : '';
+    
+    if ($id <= 0) {
+      echo json_encode(['error' => 'Valid ID is required'], JSON_UNESCAPED_UNICODE);
+      break;
+    }
+    
+    // Allow empty naam values, so we don't check for non-empty
+    $updateQuery = "UPDATE hh_index SET naam = '$naam' WHERE id = $id";
+    if ($conn->query($updateQuery)) {
+      // Retrieve the current naam after update
+      $result = $conn->query("SELECT naam FROM hh_index WHERE id = $id");
+      $row = $result->fetch_assoc();
+      
+      echo json_encode([
+        'success' => true,
+        'naam' => $row['naam']
       ], JSON_UNESCAPED_UNICODE);
     } else {
       echo json_encode(['error' => 'Update failed: ' . $conn->error], JSON_UNESCAPED_UNICODE);
@@ -1415,6 +1454,43 @@ switch ($action) {
     } else {
       echo json_encode(['has_video' => false], JSON_UNESCAPED_UNICODE);
     }
+    break;
+
+  case 'ngt_comparison_stats':
+    // Return pre-computed NGT text comparison statistics
+    $resultsFile = __DIR__ . '/ngt_comparison_results.json';
+
+    if (file_exists($resultsFile)) {
+      $jsonContent = file_get_contents($resultsFile);
+      echo $jsonContent;
+    } else {
+      echo json_encode([
+        'error' => 'Comparison results not found. Run compare_ngt_texts.py first.',
+        'hint' => 'Execute: python3 /web/hh/compare_ngt_texts.py'
+      ], JSON_UNESCAPED_UNICODE);
+    }
+    break;
+
+  case 'get_unique_labels':
+    // Get all unique labels from the hh_index table
+    $result = $conn->query("SELECT labels FROM hh_index WHERE labels IS NOT NULL AND labels != '[]'");
+
+    $uniqueLabels = [];
+    while ($row = $result->fetch_assoc()) {
+      $labelsJson = $row['labels'];
+      $labelsArray = json_decode($labelsJson, true);
+
+      if (is_array($labelsArray)) {
+        foreach ($labelsArray as $label) {
+          if (is_string($label) && trim($label) !== '' && !in_array($label, $uniqueLabels)) {
+            $uniqueLabels[] = $label;
+          }
+        }
+      }
+    }
+
+    sort($uniqueLabels);
+    echo json_encode(['labels' => $uniqueLabels], JSON_UNESCAPED_UNICODE);
     break;
 
   default:
