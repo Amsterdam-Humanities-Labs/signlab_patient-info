@@ -14,15 +14,16 @@ Everything the web server serves lives in the repository root, so URLs under `/h
 ├── begrippenlijst.html Glossary editor                 content-selector.html  Pick topics for recording
 ├── overview_hh.html    Recording overview: which topics have video / segments / annotations
 ├── subBeta8.html       Subtitle/annotation editor for recordings (subBeta4 = older 24 fps variant)
-├── autocue.html, autocue2.html   Autocue for the studio
+├── autocue2.html       Autocue for the studio
 ├── action_stats.html   Activity statistics            ngt_comparison.html   apotheek.nl NGT text comparison
 ├── api.php             General JSON API (dashboard, contents, keywords, sentences, glossary, NGT text)
 ├── getZinnen.php       Overview/annotation API (fetchSentences, countZinnen, segments, EAF/SRT handling)
 ├── segment_api.php     API used by the external video-segmentation service
-├── getMT.php, getGlosses.php, getGlossVideo.php, getHandshapes.php, get_begrippen.php, db_search.php,
-│   listVideos.php, save_subtitle.php, syncEafToDatabase.php, SignSegmentationClient.php
+├── getMT.php, getGlosses.php, getGlossVideo.php, getHandshapes.php, get_begrippen.php, save_subtitle.php
+├── auth.php            Session-cookie / API-token checks used by every endpoint above
+├── syncEafToDatabase.php, SignSegmentationClient.php   (libraries included by getZinnen.php)
 ├── styles.css, VideoDrawer.js, mod.js
-├── split_client/       PHP tools for splitting/uploading NGT text segments (viewer.php, upload.php, …)
+├── split_client/       viewer.php / segment_checker.php for reviewing NGT text segments
 │
 ├── tools/              One-off and pipeline scripts (Python; run from anywhere)
 │   ├── crawl/          crawl.py, srtCrawl.py, crawl_in_het_kort.py — scrape thuisarts.nl into data/
@@ -52,7 +53,7 @@ Not tracked (but needed on the server): `OpenDutchWordnet/` (third-party package
 - MySQL database `admin_gebarenoverleg` (shared with the signCollect suite)
 - Python 3.10+ for `tools/` (packages: `mysql-connector-python`, `requests`, `beautifulsoup4`, `python-docx`, `pdfplumber`/`PyMuPDF`, `openai`-compatible client for `openrouter.py`)
 - Media on disk: `/web/gebarenoverleg_media/studioFilesMini/{raw,post}/` for videos and segments
-- Login cookie from the signcollect.nl portal (`/userProtect.js` is loaded from the site root)
+- Login cookie from the signcollect.nl portal: pages load `/userProtect.js`, and every PHP endpoint calls `requireAuthApi()` from `auth.php` (401 without the `sessionObject` cookie)
 
 ## Setup
 
@@ -71,7 +72,11 @@ mysql -u user -p admin_gebarenoverleg < db/schema.sql
 # 3. Runtime directories, writable by the web server
 mkdir -p cache eaf subtitles && chown www-data cache eaf subtitles
 
-# 4. WordNet (only for tools/nlp)
+# 4. API token for the external segmentation service (segment_api.php):
+#    set HH_API_TOKEN in db_credentials.php and configure the client to send X-Api-Token.
+#    Until it is set, segment_api.php accepts unauthenticated calls and logs a warning.
+
+# 5. WordNet (only for tools/nlp)
 git clone https://github.com/cltl/OpenDutchWordnet && cd OpenDutchWordnet && bash install.sh
 ```
 

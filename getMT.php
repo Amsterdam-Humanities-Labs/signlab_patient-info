@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/auth.php';
+$currentUser = requireAuthApi();   // portal session cookie required
+
 // Include the MySQL configuration file
 include '../mysql_config.php';
 //disable warnings

@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/auth.php';
+$currentUser = requireAuthApi();   // portal session cookie required
+
 /**
  * getHandshapes.php
  *

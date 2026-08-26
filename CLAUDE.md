@@ -8,6 +8,7 @@ Guidance for Claude Code in this repository. Setup, layout and the pipeline are 
 - **Scripts go in `tools/<purpose>/`** (`crawl`, `db`, `nlp`, `pdf`, `ngt`). Every script starts with the `ROOT` / `DATA` header and `_sys.path.insert(0, str(ROOT))`; use `DATA / 'pages'` etc., never a relative `"pages"` or an absolute `/web/hh/...`.
 - **Data goes in `data/`.** Regenerable crawl/extraction output is tracked there so the pipeline is reproducible; runtime state (`cache/`, `eaf/`, `subtitles/`, `video_segments_cache.json`) is gitignored.
 - No `.bak`/`.backup`/`.outdated` copies in git — history has them. `.gitignore` blocks them.
+- **Every PHP endpoint authenticates.** JSON endpoints start with `require_once __DIR__ . '/auth.php'; $currentUser = requireAuthApi();`; HTML-producing PHP uses `requireAuth()`; machine endpoints (`segment_api.php`) use `requireApiToken()`. New endpoints must do the same. Validate every client-supplied filename with `basename()` + a strict regex before touching the filesystem.
 - Never commit credentials. `db_credentials.php` / `db_credentials.py` and `../mysql_config.php` are outside version control; only the `.example` files are tracked.
 
 ## Database (`admin_gebarenoverleg`, shared)

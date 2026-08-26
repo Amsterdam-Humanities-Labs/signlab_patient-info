@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/auth.php';
+$currentUser = requireAuthApi();   // portal session cookie required
+
 require_once __DIR__ . '/db_credentials.php';
 // getGlosses.php - Search for glosses in Signbank and Signcollect
 
