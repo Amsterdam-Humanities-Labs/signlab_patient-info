@@ -25,8 +25,31 @@ __pycache__/
 # Virtual environments
 venv/
 env/
-.env
-db_credentials.py
+.envdb_credentials.py
 db_credentials.php
 __pycache__/
 *.pyc
+
+db_credentials.py
+
+# --- logs, backups, caches and generated data (added 2026-08-26 cleanup) ---
+*.log
+*.bak
+*.bak.*
+*.bak-*
+*.bak_*
+*.backup
+*.backup.*
+*.backup_*
+*_backup_*
+*.orig
+*.old
+*.outdated
+*.tmp
+__pycache__/
+*.pyc
+.claude/
+.mcp.json
+.playwright-mcp/
+.superpowers/
+subtitle_timings.log
