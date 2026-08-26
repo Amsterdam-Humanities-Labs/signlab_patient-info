@@ -3,7 +3,10 @@
  * Authentication for the hh endpoints.
  *
  * Browser requests are authenticated with the signcollect.nl portal's
- * `sessionObject` cookie (set by /login.html). Machine clients (the external
+ * `sessionObject` cookie (set by /login.html). The cookie is unsigned, so the
+ * user it names is verified against the `users` table on every request;
+ * blocked accounts are rejected. Session lifetime itself is the portal's
+ * responsibility (it sets `expiresAt`); this file only honours it. Machine clients (the external
  * segmentation service) authenticate with a bearer token instead — see
  * requireApiToken().
  *
@@ -28,11 +31,55 @@ function hhSessionUser(): ?array {
             return null;
         }
     }
+    // The cookie is written client-side and unsigned, so never trust its
+    // contents alone: the (userId, username) pair must exist in `users` and
+    // the account must not be blocked. Result is cached for the request.
+    static $cache = [];
+    $key = $decoded['userId'] . '|' . $decoded['username'];
+    if (!array_key_exists($key, $cache)) {
+        $cache[$key] = hhLookupUser((int)$decoded['userId'], (string)$decoded['username']);
+    }
+    if ($cache[$key] === null) {
+        return null;
+    }
     return [
-        'userId'   => $decoded['userId'],
+        'userId'   => (int)$decoded['userId'],
         'username' => $decoded['username'],
-        'role'     => $decoded['role'] ?? 'user',
+        'role'     => $cache[$key]['role'] ?: ($decoded['role'] ?? 'user'),
     ];
+}
+
+/** Returns ['role' => …] when the user exists and is not blocked, else null. */
+function hhLookupUser(int $userId, string $cookieUser): ?array {
+    $servername = $username = $password = $database = null;
+    $cfg = dirname(__DIR__) . '/mysql_config.php';
+    if (!is_file($cfg)) {
+        error_log('hh/auth.php: ../mysql_config.php missing — cannot validate sessions');
+        return null;  // fail closed
+    }
+    include $cfg;   // defines $servername, $username, $password, $database
+    try {
+        mysqli_report(MYSQLI_REPORT_OFF);
+        $db = @new mysqli($servername, $username, $password, $database);
+        if ($db->connect_errno) {
+            error_log('hh/auth.php: DB connect failed: ' . $db->connect_error);
+            return null;
+        }
+        $stmt = $db->prepare('SELECT role, blocked FROM users WHERE userId = ? AND user = ? LIMIT 1');
+        $stmt->bind_param('is', $userId, $cookieUser);
+        $stmt->execute();
+        $stmt->bind_result($role, $blocked);
+        $found = $stmt->fetch();
+        $stmt->close();
+        $db->close();
+        if (!$found || (int)$blocked === 1) {
+            return null;
+        }
+        return ['role' => (string)$role];
+    } catch (Throwable $e) {
+        error_log('hh/auth.php: lookup failed: ' . $e->getMessage());
+        return null;
+    }
 }
 
 /** JSON endpoints: 401 + JSON body when not logged in. */
