@@ -27,11 +27,11 @@ $action = isset($_GET['action']) ? $_GET['action'] : '';
 
 if ($action === 'get_transcriptions') {
     // Get all m_transcriptions grouped with first line of plain_text
-    $sql = "SELECT mt.m_transcription, COUNT(*) AS count, hi.plain_text, hi.id AS content_id
+    $sql = "SELECT mt.m_transcription, COUNT(*) AS count, hi.plain_text, hi.id AS content_id, hi.labels
             FROM matched_transcriptions mt
             LEFT JOIN hh_index hi ON mt.m_transcription = hi.id
             WHERE mt.zOg = 'tekst' AND mt.added != 'DELETE'
-            GROUP BY mt.m_transcription 
+            GROUP BY mt.m_transcription
             ORDER BY mt.m_transcription ASC";
     
     $result = $conn->query($sql);
@@ -112,7 +112,7 @@ else if ($action === 'get_videos_for_transcription') {
             // Convert m_file to video URL
             $videoFile = $row['m_file'];
             $videoFile = str_replace('.wav', '.mp4', $videoFile);
-            $row['video_url'] = "https://signcollect.nl/gebarenoverleg_media/studioFilesMini/raw/" . $videoFile;
+            $row['video_url'] = "https://media.signcollect.nl/" . $videoFile;
             
             $videos[] = $row;
         }
