@@ -54,3 +54,17 @@ __pycache__/
 .playwright-mcp/
 .superpowers/
 subtitle_timings.log
+
+# --- hh: third-party, runtime and generated (2026-08-26 restructure) ---
+OpenDutchWordnet/
+odwn/
+split_client/output/
+cache/
+subtitles/
+video_segments_cache.json
+glosses_transformed.json
+*.docx
+*.xml.gz
+thuisarts/
+.git_bloat_backup/
+eaf/

@@ -1,111 +1,42 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code in this repository. Setup, layout and the pipeline are in `README.md`; this file holds conventions and gotchas.
 
-## Project Overview
+## Layout rules
 
-This is a Dutch health information indexing system that crawls, processes, and presents medical content from thuisarts.nl. The project combines web crawling, natural language processing (using OpenDutchWordnet), and a web interface for browsing and searching health-related content.
+- **Web root = repository root.** Anything the browser or Apache must reach (`*.html`, `*.php`, `*.js`, `*.css`, `split_client/`, runtime `eaf/` `cache/` `subtitles/`) stays at the top level so `/hh/…` URLs keep working. Do not move these into subdirectories.
+- **Scripts go in `tools/<purpose>/`** (`crawl`, `db`, `nlp`, `pdf`, `ngt`). Every script starts with the `ROOT` / `DATA` header and `_sys.path.insert(0, str(ROOT))`; use `DATA / 'pages'` etc., never a relative `"pages"` or an absolute `/web/hh/...`.
+- **Data goes in `data/`.** Regenerable crawl/extraction output is tracked there so the pipeline is reproducible; runtime state (`cache/`, `eaf/`, `subtitles/`, `video_segments_cache.json`) is gitignored.
+- No `.bak`/`.backup`/`.outdated` copies in git — history has them. `.gitignore` blocks them.
+- Never commit credentials. `db_credentials.php` / `db_credentials.py` and `../mysql_config.php` are outside version control; only the `.example` files are tracked.
 
-## Commands
+## Database (`admin_gebarenoverleg`, shared)
 
-### OpenDutchWordnet Setup
-```bash
-cd OpenDutchWordnet
-bash install.sh  # Creates Python 3.4+ virtual environment
-```
+Structure in `db/schema.sql`. Two credential mechanisms coexist: `db_credentials.php`/`.py` (api.php, tools) and `../mysql_config.php` (getZinnen.php, getMT.php, getGlossVideo.php, syncEafToDatabase.php). Don't add a third.
 
-### Data Processing Pipeline
-```bash
-# 1. Crawl new content from thuisarts.nl
-python crawl.py
+- `hh_index` — one row per thuisarts.nl **topic** (~3,485), not per sentence; `total_items` counts topics.
+- `hh_sentences`, `hh_words`, `hh_lemma`, `hh_index_glos` — NLP tables filled by `tools/`.
+- `matched_transcriptions` — links recordings to topics: `m_file` (wav name), `m_transcription` (= `hh_index.id`), `zOg = 'tekst'`, `added = '1'`.
+- `hh_segments` — video segments: `base_filename`, `segment_number`, `filename`, `location`; UNIQUE `(base_filename, segment_number)`; only `location = 'post'` rows are kept. The DB is the source of truth, not the filesystem.
+- `hh_unique_words` and `medicijnen` are referenced by old scripts but no longer exist in the database.
 
-# 2. Import crawled data to database
-python json_to_db.py
+## Media paths
 
-# 3. Process unique words
-python create_unique_words_table.py
+- Raw videos: `/web/gebarenoverleg_media/studioFilesMini/raw/` (`M20250826_3368.mp4`)
+- Segments: `/web/gebarenoverleg_media/studioFilesMini/post/` (`M20250826_3368_1.mp4`, 1-indexed)
+- `base_filename` = `matched_transcriptions.m_file` without `.wav`
+- Annotation files: `eaf/` in this repo, served at `https://signcollect.nl/hh/eaf/`
 
-# 4. Load lemmatized words
-python lemma_load.py
-```
+## Key files
 
-### Testing
-```bash
-cd OpenDutchWordnet
-bash unit_test.sh  # Run OpenDutchWordnet unit tests
-```
+- `overview_hh.html` + `getZinnen.php` — overview with badge counts and filters (label, status, video, segments). Filter state lives in JS globals and must be passed through every `loadSentences()` call or pagination loses it. `countZinnen` is cached 1 h in `cache/countZinnen.json`.
+- `subBeta8.html` — current annotation editor (copied from `/web/zin/`, 24 fps to limit memory). `subBeta4.html` is the previous version; `overview_hh.html` still links to it.
+- `segment_api.php` — `list_unsegmented`, `upload_segments` (POST mp4 → `post/` + upsert `hh_segments`), `status`.
+- `api.php` — dashboard/contents/keywords/sentences plus glossary CRUD and NGT-text endpoints. `ngt_comparison_stats` reads `data/ngt_comparison_results.json`, produced by `tools/ngt/compare_ngt_texts.py`.
+- `overview_hh.html` uses Bootstrap 5 + vanilla JS; the older pages use React + Mantine from CDN.
 
-## Architecture
+## Working on it
 
-### Core Components
-
-1. **Data Collection Layer**
-   - `crawl.py`: Web scraper for thuisarts.nl with 5-second request delays
-   - Stores raw data in `pages/` directory as JSON files
-
-2. **Data Processing Layer**
-   - Multiple Python scripts for importing and processing data
-   - Database schema with tables: `hh_index`, `hh_sentences`, `hh_words`, `hh_lemma`, `hh_unique_words`
-   - OpenDutchWordnet integration for linguistic analysis
-
-3. **API Layer**
-   - `api.php`: RESTful endpoints for data access
-   - Key endpoints: `dashboard`, `keywords`, `contents`, `words`, `sentences`, `search_glosses`
-
-4. **Presentation Layer**
-   - HTML/JavaScript frontend using React and Mantine UI
-   - Main pages: `index.html` (dashboard), `contents.html`, `words.html`, `sentences.html`
-
-### Database Configuration
-- Host: `localhost` (or `signlab-db`)
-- User: `user`
-- Password: `$DB_PASSWORD`
-- Database: `admin_gebarenoverleg`
-- Charset: `utf8mb4`
-
-### Key Database Tables
-- `hh_index`: Health topics/items (~3485 rows). Each row is a topic from thuisarts.nl. NOT sentences — the variable `total_items` reflects this.
-- `hh_sentences`, `hh_words`, `hh_lemma`, `hh_unique_words`: NLP processing tables
-- `matched_transcriptions`: Links videos to hh_index items. Key fields: `m_file` (.wav filename), `m_transcription` (hh_index.id), `zOg` ('tekst'), `added` ('1')
-- `hh_segments`: Video segments table. Fields: `base_filename`, `segment_number`, `filename`, `location` ('post'). UNIQUE on `(base_filename, segment_number)`. Only `location='post'` entries are kept.
-
-### Directory Structure
-- `/json/`: Medical condition data files
-- `/json_texts/`: Numbered JSON text files
-- `/pages/`: Crawled webpage data
-- `/odwn/`: OpenDutch WordNet XML data
-- `/OpenDutchWordnet/`: Dutch WordNet Python module
-
-### Video/Segment File Locations
-- **Raw videos**: `/web/gebarenoverleg_media/studioFilesMini/raw/` — original full videos (e.g. `M20250826_3368.mp4`)
-- **Post segments**: `/web/gebarenoverleg_media/studioFilesMini/post/` — processed/smaller segment files (e.g. `M20250826_3368_1.mp4`). Primary location for segments.
-- Segment naming: `{base_filename}_{N}.mp4` where N is 1-indexed
-- `base_filename` = `matched_transcriptions.m_file` minus `.wav`
-
-## Key Files
-
-### Overview & Annotation
-- **`overview_hh.html`**: Main overview page. Shows badges with counts, supports filtering (label, status, video, segments). Links to `/hh/subBeta4.html` for annotation. Pagination preserves all filters via state variables (`withVideoFilter`, `withoutVideoFilter`, `segmentsFilter`, etc.). When `withVideo` filter is active, items with segments are prioritized in results.
-- **`subBeta4.html`**: Video annotation/subtitle editor (copied from `/web/zin/`, runs at **24fps** to reduce memory pressure). Loads videos from `post/` first, falls back to `raw/`.
-
-### API Files
-- **`getZinnen.php`**: Main API for overview page. Key actions: `fetchSentences` (paginated with filters), `countZinnen` (badge counts, cached 1hr), `fetchSegments`, `fetchSegmentsByRow`, `syncSegments` (DB counts)
-- **`segment_api.php`**: External segmentation service API:
-  - `GET ?action=list_unsegmented` — videos without segments
-  - `POST ?action=upload_segments` — receives .mp4 files, saves to `post/`, upserts `hh_segments`
-  - `GET ?action=status&base_filename=X` — segment status
-- **`api.php`**: General data API (dashboard, keywords, contents, words, sentences)
-- **`getMT.php`**: Fetches matched_transcription data for a specific item
-
-### Outdated Files (moved, not deleted)
-- `scanVideoSegments.php.outdated`, `populateSegments.php.outdated`, `listVideos.html.outdated`
-
-## Key Development Patterns
-
-1. **Database Connections**: PHP files use `include '../mysql_config.php'` with `new mysqli()` and `utf8mb4`
-2. **Error Handling**: Scripts typically use try-except blocks for database operations
-3. **Data Format**: JSON files follow structure: `{url, title, plain_text, sentences[], words[]}`
-4. **API Responses**: PHP API returns JSON with consistent structure
-5. **Frontend**: overview_hh.html uses Bootstrap 5 + vanilla JS. Other pages use React/Mantine.
-6. **Segment workflow**: External service polls `list_unsegmented`, downloads videos, segments them, uploads via `upload_segments`. DB (`hh_segments`) is single source of truth.
-7. **Filter state**: All filters tracked as JS globals, passed through every `loadSentences()` call to persist across pagination.
+- PHP: `php -l file.php`. Python: `python3 -m py_compile tools/*/*.py`. There is no test suite.
+- Scripts hit the production database; read before you write, and prefer `--dry-run`-style checks when adding new ones.
+- Requests to thuisarts.nl must keep the 5-second delay in `crawl.py`.
