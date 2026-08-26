@@ -25,7 +25,8 @@ __pycache__/
 # Virtual environments
 venv/
 env/
-.envdb_credentials.py
+.env
+db_credentials.py
 db_credentials.php
 __pycache__/
 *.pyc
