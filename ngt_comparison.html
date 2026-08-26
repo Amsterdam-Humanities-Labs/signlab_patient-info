@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NGT Text Comparison - apotheek.nl</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 1px solid #e9ecef;
+      text-align: center;
+    }
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #339af0;
+    }
+    .stat-card .label {
+      color: #868e96;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 0.5rem;
+    }
+    .tab {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 1rem;
+      color: #868e96;
+      border-radius: 4px 4px 0 0;
+      transition: all 0.2s;
+    }
+    .tab:hover {
+      background: #f1f3f5;
+    }
+    .tab.active {
+      background: #339af0;
+      color: white;
+    }
+    .panel {
+      background-color: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      border: 1px solid #e9ecef;
+      margin-bottom: 1.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid #dee2e6;
+    }
+    th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    tr:hover {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+    .group-row {
+      cursor: pointer;
+    }
+    .group-row:hover {
+      background-color: #e7f5ff;
+    }
+    .expanded-content {
+      display: none;
+      background: #f8f9fa;
+    }
+    .expanded-content.show {
+      display: table-row;
+    }
+    .expanded-cell {
+      padding: 1rem;
+    }
+    .row-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .row-badge {
+      background: #e7f5ff;
+      color: #339af0;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    .sample-text {
+      max-width: 400px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .count-badge {
+      background: #339af0;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+    }
+    .count-badge.single {
+      background: #868e96;
+    }
+    .loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 200px;
+    }
+    .spinner {
+      border: 4px solid rgba(0, 0, 0, 0.1);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border-left: 4px solid #339af0;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .error-message {
+      background: #fff5f5;
+      border: 1px solid #ffc9c9;
+      color: #c92a2a;
+      padding: 1rem;
+      border-radius: 4px;
+    }
+    .summary-bar {
+      display: flex;
+      height: 24px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    .summary-bar .shared {
+      background: #339af0;
+    }
+    .summary-bar .unique {
+      background: #adb5bd;
+    }
+    .legend {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+    .legend-dot.shared {
+      background: #339af0;
+    }
+    .legend-dot.unique {
+      background: #adb5bd;
+    }
+    .expand-icon {
+      transition: transform 0.2s;
+    }
+    .expand-icon.rotated {
+      transform: rotate(90deg);
+    }
+    h1 {
+      margin-bottom: 1.5rem;
+    }
+    .refresh-btn {
+      padding: 0.5rem 1rem;
+      background: #339af0;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .refresh-btn:hover {
+      background: #228be6;
+    }
+    .header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-row">
+      <h1>NGT Text Comparison - apotheek.nl</h1>
+      <button class="refresh-btn" onclick="loadData()">Refresh Data</button>
+    </div>
+
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+    </div>
+
+    <div id="error" class="error-message" style="display: none;"></div>
+
+    <div id="content" style="display: none;">
+      <!-- Summary Stats -->
+      <div class="stats-grid" id="stats-grid">
+        <!-- Stats will be inserted here -->
+      </div>
+
+      <!-- Tabs for each column -->
+      <div class="tabs">
+        <button class="tab active" data-column="ngt_text2">NGT Text 2 (Gebruik)</button>
+        <button class="tab" data-column="ngt_text3">NGT Text 3 (Bijwerkingen)</button>
+        <button class="tab" data-column="ngt_text4">NGT Text 4 (Waarschuwingen)</button>
+      </div>
+
+      <!-- Sentence Statistics -->
+      <div class="panel" id="sentence-stats-panel">
+        <h3 style="margin-top: 0;">Sentence-Level Statistics</h3>
+        <div class="stats-grid" id="sentence-stats">
+          <!-- Sentence stats will be inserted here -->
+        </div>
+      </div>
+
+      <!-- Most Common Shared Sentences -->
+      <div class="panel">
+        <h3 style="margin-top: 0;">Most Common Shared Sentences</h3>
+        <p style="color: #868e96; margin-bottom: 1rem;">Sentences that appear in multiple rows (potential reusable content)</p>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;"></th>
+              <th style="width: 80px;">Count</th>
+              <th>Sentence</th>
+              <th style="width: 150px;">Found in Rows</th>
+            </tr>
+          </thead>
+          <tbody id="sentences-table">
+            <!-- Shared sentences will be inserted here -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Text Groups Table -->
+      <div class="panel">
+        <h3 style="margin-top: 0;">Full Text Groups</h3>
+        <p style="color: #868e96; margin-bottom: 1rem;">Rows grouped by overall text similarity (80% threshold)</p>
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;"></th>
+              <th style="width: 100px;">Count</th>
+              <th>Sample Text</th>
+              <th style="width: 120px;">Row IDs</th>
+            </tr>
+          </thead>
+          <tbody id="groups-table">
+            <!-- Groups will be inserted here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let data = null;
+    let currentColumn = 'ngt_text2';
+
+    async function loadData() {
+      document.getElementById('loading').style.display = 'flex';
+      document.getElementById('content').style.display = 'none';
+      document.getElementById('error').style.display = 'none';
+
+      try {
+        const response = await fetch('api.php?action=ngt_comparison_stats');
+        const result = await response.json();
+
+        if (result.error) {
+          throw new Error(result.error + (result.hint ? '\n' + result.hint : ''));
+        }
+
+        data = result;
+        renderStats();
+        renderAll();
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+      } catch (err) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = err.message;
+      }
+    }
+
+    function renderStats() {
+      const statsGrid = document.getElementById('stats-grid');
+      const columns = data.columns;
+
+      let html = `
+        <div class="stat-card">
+          <div class="value">${data.total_rows}</div>
+          <div class="label">Total apotheek.nl Rows</div>
+        </div>
+      `;
+
+      const columnLabels = {
+        'ngt_text2': 'NGT Text 2',
+        'ngt_text3': 'NGT Text 3',
+        'ngt_text4': 'NGT Text 4'
+      };
+
+      for (const [col, stats] of Object.entries(columns)) {
+        html += `
+          <div class="stat-card">
+            <div class="value">${stats.unique_groups}</div>
+            <div class="label">${columnLabels[col]} Groups</div>
+            <div class="summary-bar">
+              <div class="shared" style="width: ${stats.pct_shared}%;"></div>
+              <div class="unique" style="width: ${100 - stats.pct_shared}%;"></div>
+            </div>
+            <div class="legend">
+              <span class="legend-item"><span class="legend-dot shared"></span>${stats.pct_shared}% shared</span>
+              <span class="legend-item"><span class="legend-dot unique"></span>${(100 - stats.pct_shared).toFixed(1)}% unique</span>
+            </div>
+          </div>
+        `;
+      }
+
+      statsGrid.innerHTML = html;
+    }
+
+    function renderSentenceStats() {
+      const statsDiv = document.getElementById('sentence-stats');
+      const columnData = data.columns[currentColumn];
+
+      if (!columnData || !columnData.sentences) {
+        statsDiv.innerHTML = '<p>No sentence data available.</p>';
+        return;
+      }
+
+      const s = columnData.sentences;
+      statsDiv.innerHTML = `
+        <div class="stat-card">
+          <div class="value">${s.total_sentences}</div>
+          <div class="label">Total Sentences</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${s.unique_sentences}</div>
+          <div class="label">Unique Sentences</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${s.shared_sentences}</div>
+          <div class="label">Shared Sentences</div>
+          <div class="summary-bar">
+            <div class="shared" style="width: ${s.pct_shared}%;"></div>
+            <div class="unique" style="width: ${s.pct_unique}%;"></div>
+          </div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-dot shared"></span>${s.pct_shared}% shared</span>
+            <span class="legend-item"><span class="legend-dot unique"></span>${s.pct_unique}% unique</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${s.avg_sentences_per_row}</div>
+          <div class="label">Avg Sentences/Row</div>
+        </div>
+      `;
+    }
+
+    function renderSharedSentences() {
+      const tbody = document.getElementById('sentences-table');
+      const columnData = data.columns[currentColumn];
+
+      if (!columnData || !columnData.sentences || !columnData.sentences.most_common) {
+        tbody.innerHTML = '<tr><td colspan="4">No shared sentences found.</td></tr>';
+        return;
+      }
+
+      const sentences = columnData.sentences.most_common;
+      if (sentences.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">No sentences are shared across multiple rows.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      sentences.forEach((item, index) => {
+        html += `
+          <tr class="group-row" onclick="toggleSentenceExpand(${index})">
+            <td><span class="expand-icon" id="sent-icon-${index}">&#9654;</span></td>
+            <td><span class="count-badge">${item.count}</span></td>
+            <td class="sample-text" title="${escapeHtml(item.full_sentence)}">${escapeHtml(item.sentence)}</td>
+            <td>${item.row_ids.slice(0, 3).join(', ')}${item.row_ids.length > 3 ? '...' : ''}</td>
+          </tr>
+          <tr class="expanded-content" id="sent-expand-${index}">
+            <td colspan="4" class="expanded-cell">
+              <strong>Full sentence:</strong>
+              <div style="margin-top: 0.5rem; padding: 0.75rem; background: white; border-radius: 4px; border: 1px solid #dee2e6;">
+                ${escapeHtml(item.full_sentence)}
+              </div>
+              <strong style="display: block; margin-top: 1rem;">Found in ${item.count} rows:</strong>
+              <div class="row-list" style="margin-top: 0.5rem;">
+                ${item.row_ids.map(id => `
+                  <a href="contents.html?search=${encodeURIComponent(id)}" class="row-badge">#${id}</a>
+                `).join('')}
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function toggleSentenceExpand(index) {
+      const expandRow = document.getElementById(`sent-expand-${index}`);
+      const icon = document.getElementById(`sent-icon-${index}`);
+      expandRow.classList.toggle('show');
+      icon.classList.toggle('rotated');
+    }
+
+    function renderGroups() {
+      const tbody = document.getElementById('groups-table');
+      const columnData = data.columns[currentColumn];
+
+      if (!columnData || !columnData.groups) {
+        tbody.innerHTML = '<tr><td colspan="4">No data available for this column.</td></tr>';
+        return;
+      }
+
+      let html = '';
+      columnData.groups.forEach((group, index) => {
+        const isMultiple = group.count > 1;
+        html += `
+          <tr class="group-row" onclick="toggleExpand(${index})">
+            <td><span class="expand-icon" id="icon-${index}">&#9654;</span></td>
+            <td><span class="count-badge ${isMultiple ? '' : 'single'}">${group.count}</span></td>
+            <td class="sample-text" title="${escapeHtml(group.sample)}">${escapeHtml(group.sample)}</td>
+            <td>${group.row_ids.slice(0, 3).join(', ')}${group.row_ids.length > 3 ? '...' : ''}</td>
+          </tr>
+          <tr class="expanded-content" id="expand-${index}">
+            <td colspan="4" class="expanded-cell">
+              <strong>All Row IDs in this group (${group.count}):</strong>
+              <div class="row-list" style="margin-top: 0.5rem;">
+                ${group.rows.map(r => `
+                  <a href="contents.html?search=${encodeURIComponent(r.id)}" class="row-badge" title="${escapeHtml(r.url)}">
+                    #${r.id}
+                  </a>
+                `).join('')}
+              </div>
+              ${group.rows[0] ? `
+                <div style="margin-top: 1rem;">
+                  <strong>Full text sample:</strong>
+                  <div style="margin-top: 0.5rem; padding: 0.75rem; background: white; border-radius: 4px; border: 1px solid #dee2e6; max-height: 200px; overflow-y: auto;">
+                    ${escapeHtml(group.rows[0].text)}
+                  </div>
+                </div>
+              ` : ''}
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    function toggleExpand(index) {
+      const expandRow = document.getElementById(`expand-${index}`);
+      const icon = document.getElementById(`icon-${index}`);
+
+      expandRow.classList.toggle('show');
+      icon.classList.toggle('rotated');
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function renderAll() {
+      renderSentenceStats();
+      renderSharedSentences();
+      renderGroups();
+    }
+
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentColumn = tab.dataset.column;
+        renderAll();
+      });
+    });
+
+    // Initial load
+    loadData();
+  </script>
+</body>
+</html>

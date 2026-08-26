@@ -1458,7 +1458,7 @@ switch ($action) {
 
   case 'ngt_comparison_stats':
     // Return pre-computed NGT text comparison statistics
-    $resultsFile = __DIR__ . '/ngt_comparison_results.json';
+    $resultsFile = __DIR__ . '/data/ngt_comparison_results.json';
 
     if (file_exists($resultsFile)) {
       $jsonContent = file_get_contents($resultsFile);
@@ -1466,7 +1466,7 @@ switch ($action) {
     } else {
       echo json_encode([
         'error' => 'Comparison results not found. Run compare_ngt_texts.py first.',
-        'hint' => 'Execute: python3 /web/hh/compare_ngt_texts.py'
+        'hint' => 'Execute: python3 tools/ngt/compare_ngt_texts.py'
       ], JSON_UNESCAPED_UNICODE);
     }
     break;
