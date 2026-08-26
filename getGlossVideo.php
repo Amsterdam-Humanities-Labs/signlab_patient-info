@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/auth.php';
+$currentUser = requireAuthApi();   // portal session cookie required
+
 // Resolve a single isolated-gloss studio clip for the annotation-tool spot panel.
 //
 //   GET ?gloss=GA-MAAR-A  ->  {"success":true,"url":"https://.../studioFilesMini/post/M....mp4"}

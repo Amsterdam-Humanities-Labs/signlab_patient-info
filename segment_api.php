@@ -2,7 +2,7 @@
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+header('Access-Control-Allow-Headers: Content-Type, X-Api-Token, Authorization');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
@@ -20,6 +20,10 @@ if ($conn->connect_error) {
     echo json_encode(['success' => false, 'error' => 'Connection failed: ' . $conn->connect_error]);
     exit();
 }
+
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') { exit; }
+require_once __DIR__ . '/auth.php';
+requireApiToken();   // X-Api-Token / Bearer (HH_API_TOKEN in db_credentials.php) or a portal session
 
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 

@@ -1,4 +1,7 @@
 <?php
+require_once __DIR__ . '/auth.php';
+$currentUser = requireAuthApi();   // portal session cookie required
+
 require_once __DIR__ . '/db_credentials.php';
 /**
  * Save subtitle timing data
