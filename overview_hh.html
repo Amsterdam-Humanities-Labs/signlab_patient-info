@@ -1378,7 +1378,7 @@ function addEventListeners() {
             const videoIndex = e.target.getAttribute('data-videoindex');
             const filename = e.target.getAttribute('data-filename');
             saveCurrentState();
-            window.location.href = `/hh/subBeta8.html?filename=${filename}`;
+            window.location.href = `/annotation-editors/subBeta8/zin/subBeta8.html?filename=${filename}`;
 
         }
 
@@ -1395,12 +1395,19 @@ function addEventListeners() {
             if (card) {
                 const segFilename = card.getAttribute('data-segment-filename');
                 if (segFilename) {
-                    window.open(`https://signcollect.nl/hh/subBeta4.html?filename=${encodeURIComponent(segFilename)}`, '_blank');
+                    window.open(`/annotation-editors/subBeta8/zin/subBeta8.html?filename=${encodeURIComponent(segFilename)}`, '_blank');
                 }
             }
         }
 
-        // Redirect to 3DAnn1.html for Motion Capture editing
+        // Motion capture editing is not wired up here.
+        //
+        // This opened 3DAnn1.html, which does not exist under /hh - the link has
+        // been returning 404. The editors now live in signlab_annotation-editors
+        // and the only mocap editor there is 3DAnn3, which reads
+        // FBXtoGLBCompression output; the legacy /gebarenoverleg_media/fbx/<name>.glb
+        // URL built below is not that format, so pointing this at 3DAnn3 would
+        // render at the wrong scale. Report it instead of opening something wrong.
         if (e.target && e.target.classList.contains('editMocap-btn')) {
             const filename = e.target.getAttribute('data-filename');
 
@@ -1410,10 +1417,9 @@ function addEventListeners() {
                 .then(data => {
                     if (data.success && data.hasMocap) {
                         // Replace .fbx extension with .glb
-                        const glbFilename = data.fbxFilename.replace(/\.fbx$/i, '.glb');
-                        const glbUrl = `/gebarenoverleg_media/fbx/${glbFilename}`;
-                        saveCurrentState();
-                        window.location.href = `3DAnn1.html?glb=${encodeURIComponent(glbUrl)}`;
+                        console.log(`[mocap] no editor wired up for ${data.fbxFilename}`);
+                        alert('Motion capture editing is not available from this page. '
+                            + 'Open the recording from the Zinnen interface instead.');
                     } else {
                         alert('No motion capture file found for this video.');
                     }
