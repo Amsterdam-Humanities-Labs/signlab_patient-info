@@ -1,4 +1,9 @@
 <?php
+
+// signcollect-lib's install-root resolver: sc_path(), sc_dir(), sc_root().
+// Vendored shim - it finds /web/lib/paths.php, or falls back to /web.
+require_once __DIR__ . '/sc_paths.php';
+
 require_once __DIR__ . '/auth.php';
 $currentUser = requireAuthApi();   // portal session cookie required
 
@@ -1121,9 +1126,9 @@ function fetchSentences($conn) {
             $srt_nederlands = __DIR__ . '/eaf/' . $video_basename . '_Nederlands.srt';
             $srt_signbank_id_glossen = __DIR__ . '/eaf/' . $video_basename . '_Signbank_ID_glossen.srt';
             $srt_gebaar_voor_gebaar = __DIR__ . '/eaf/' . $video_basename . '_Gebaar-voor-gebaar.srt';
-            $video_row['srt_nederlands'] = file_exists($srt_nederlands) ? str_replace('/web/hh/eaf/', 'https://signcollect.nl/hh/eaf/', $srt_nederlands) : null;
-            $video_row['srt_signbank_id_glossen'] = file_exists($srt_signbank_id_glossen) ? str_replace('/web/hh/eaf/', 'https://signcollect.nl/hh/eaf/', $srt_signbank_id_glossen) : null;
-            $video_row['srt_gebaar_voor_gebaar'] = file_exists($srt_gebaar_voor_gebaar) ? str_replace('/web/hh/eaf/', 'https://signcollect.nl/hh/eaf/', $srt_gebaar_voor_gebaar) : null;
+            $video_row['srt_nederlands'] = file_exists($srt_nederlands) ? str_replace(sc_dir('hh/eaf'), 'https://signcollect.nl/hh/eaf/', $srt_nederlands) : null;
+            $video_row['srt_signbank_id_glossen'] = file_exists($srt_signbank_id_glossen) ? str_replace(sc_dir('hh/eaf'), 'https://signcollect.nl/hh/eaf/', $srt_signbank_id_glossen) : null;
+            $video_row['srt_gebaar_voor_gebaar'] = file_exists($srt_gebaar_voor_gebaar) ? str_replace(sc_dir('hh/eaf'), 'https://signcollect.nl/hh/eaf/', $srt_gebaar_voor_gebaar) : null;
 
             $videosGrouped[$transcriptionID][] = $video_row;
         }
@@ -3180,7 +3185,7 @@ function processSegmentation($conn) {
     $baseFilename = preg_replace('/[^a-zA-Z0-9_-]/', '', $baseFilename);
 
     // Construct .hamer file path
-    $rawDir = '/web/gebarenoverleg_media/studioFilesMini/raw/';
+    $rawDir = sc_dir('media_raw');
     $hamerPath = $rawDir . $baseFilename . '.hamer';
 
     // Check if .hamer file exists
@@ -3263,7 +3268,7 @@ function processSegmentationStreaming($conn) {
     $baseFilename = preg_replace('/[^a-zA-Z0-9_-]/', '', $baseFilename);
 
     // Construct .hamer file path
-    $rawDir = '/web/gebarenoverleg_media/studioFilesMini/raw/';
+    $rawDir = sc_dir('media_raw');
     $hamerPath = $rawDir . $baseFilename . '.hamer';
 
     // Check if .hamer file exists
@@ -3306,7 +3311,7 @@ function processSegmentationStreaming($conn) {
             $debugInfo .= "Result keys: " . implode(', ', array_keys($result)) . "\n";
             $debugInfo .= "VTT preview: " . substr($result['vtt_content'] ?? '', 0, 200) . "\n";
             $debugInfo .= "About to send completed message...\n";
-            file_put_contents('/web/zin/debug_segmentation.log', $debugInfo, FILE_APPEND);
+            file_put_contents(sc_path('zin/debug_segmentation.log'), $debugInfo, FILE_APPEND);
 
             // Send completed message
             $completedMessage = [
@@ -3315,13 +3320,13 @@ function processSegmentationStreaming($conn) {
                 'metadata' => $result['metadata'] ?? []
             ];
 
-            file_put_contents('/web/zin/debug_segmentation.log',
+            file_put_contents(sc_path('zin/debug_segmentation.log'),
                 "Completed message JSON: " . json_encode($completedMessage) . "\n",
                 FILE_APPEND);
 
             sendSSE($completedMessage);
 
-            file_put_contents('/web/zin/debug_segmentation.log',
+            file_put_contents(sc_path('zin/debug_segmentation.log'),
                 "Completed message SENT\n===========================\n",
                 FILE_APPEND);
         } else {
@@ -3372,7 +3377,7 @@ function getLatestMocapFile($conn) {
     $baseFilename = preg_replace('/\.(wav|mp4)$/i', '', $mFile);
 
     // FBX directory path
-    $fbxDir = '/web/gebarenoverleg_media/fbx/';
+    $fbxDir = sc_dir('media_fbx');
 
     // Find all FBX files matching pattern: {baseFilename}_*_*.fbx
     $pattern = $fbxDir . $baseFilename . '_*_*.fbx';
