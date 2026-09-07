@@ -25,12 +25,7 @@ Everything the web server serves lives in the repository root, so URLs under `/h
 ├── styles.css, VideoDrawer.js, mod.js
 ├── split_client/       viewer.php / segment_checker.php for reviewing NGT text segments
 │
-├── tools/              One-off and pipeline scripts (Python; run from anywhere)
-│   ├── crawl/          crawl.py, srtCrawl.py, crawl_in_het_kort.py — scrape thuisarts.nl into data/
-│   ├── db/             json_to_db.py, importJsonToDb.py, create_unique_words_table.py, … — load data/ into MySQL
-│   ├── nlp/            lemma_load.py, lemma_to_sb.py, odwn.py, openrouter.py — lemmatisation, WordNet, topic labelling
-│   ├── pdf/            pdfToText.py, extract_pdf_sections.py, batch_*.py — apotheek.nl PDF extraction (see docs/)
-│   └── ngt/            compare_ngt_texts.py, export_ngt_to_docx.py — NGT text comparison for ngt_comparison.html
+│                       (tools/ was removed - see "The data pipeline is gone")
 │
 ├── data/               Crawled and derived data (tracked; regenerate with tools/)
 │   ├── pages/          Raw crawl output, one JSON per thuisarts.nl page (source for json_to_db.py)
@@ -51,7 +46,6 @@ Not tracked (but needed on the server): `OpenDutchWordnet/` (third-party package
 
 - Apache + PHP 8 with `mysqli`, served with this directory mounted at `/hh/`
 - MySQL database `admin_gebarenoverleg` (shared with the signCollect suite)
-- Python 3.10+ for `tools/` (packages: `mysql-connector-python`, `requests`, `beautifulsoup4`, `python-docx`, `pdfplumber`/`PyMuPDF`, `openai`-compatible client for `openrouter.py`)
 - Media on disk: `/web/gebarenoverleg_media/studioFilesMini/{raw,post}/` for videos and segments
 - Login cookie from the signcollect.nl portal: pages load `/userProtect.js`, and every PHP endpoint calls `requireAuthApi()` from `auth.php` (401 without the `sessionObject` cookie)
 
@@ -85,16 +79,27 @@ mkdir -p cache eaf subtitles && chown www-data cache eaf subtitles
 git clone https://github.com/cltl/OpenDutchWordnet && cd OpenDutchWordnet && bash install.sh
 ```
 
-## Data pipeline
+## The data pipeline is gone
 
-```bash
-python3 tools/crawl/crawl.py                     # thuisarts.nl → data/pages/*.json (5 s delay per request)
-python3 tools/db/json_to_db.py                   # data/pages → hh_index, hh_sentences, hh_words
-python3 tools/db/create_unique_words_table.py
-python3 tools/nlp/lemma_load.py                  # lemmas from data/wordlist.txt → hh_lemma
-```
+`tools/` held the only written record of how the hh database is built:
+crawl thuisarts.nl into `data/pages/`, load that into `hh_index` /
+`hh_sentences` / `hh_words`, lemmatise, label topics, extract the apotheek.nl
+PDFs. Thirty-four Python files, four stages.
 
-All scripts locate the repository through `ROOT`/`DATA` constants at the top of the file, so they can be run from any working directory. Scripts that need the database import `db_credentials.py` from the repo root.
+They were removed because this repository is deployed into an Apache document
+root that has no Python handler, so every one of them was served as source to
+anyone who asked for the URL. They were also, individually, one-off scripts:
+run once, against a data set that no longer changes, by one person.
+
+Together they were not one-off at all - they were the reproduction recipe -
+and that is what left. `data/` is still tracked, so the *output* of the
+pipeline survives in full and the database can still be rebuilt from it by
+`db/schema.sql` plus a loader someone writes again. The crawl itself is what
+would have to be redone from scratch.
+
+The files are recoverable: they are in this repository's history, and on the
+production server, which keeps its own copy. If they come back they belong
+somewhere outside the docroot.
 
 ## Video segments and annotation
 
