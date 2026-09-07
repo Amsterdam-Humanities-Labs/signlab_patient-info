@@ -9,11 +9,11 @@ Guidance for Claude Code in this repository. Setup, layout and the pipeline are 
 - **Data goes in `data/`.** Regenerable crawl/extraction output is tracked there so the pipeline is reproducible; runtime state (`cache/`, `eaf/`, `subtitles/`, `video_segments_cache.json`) is gitignored.
 - No `.bak`/`.backup`/`.outdated` copies in git — history has them. `.gitignore` blocks them.
 - **Every PHP endpoint authenticates.** JSON endpoints start with `require_once __DIR__ . '/auth.php'; $currentUser = requireAuthApi();`; HTML-producing PHP uses `requireAuth()`; machine endpoints (`segment_api.php`) use `requireApiToken()`. New endpoints must do the same. Validate every client-supplied filename with `basename()` + a strict regex before touching the filesystem.
-- Never commit credentials. `db_credentials.php` / `db_credentials.py` and `../mysql_config.php` are outside version control; only the `.example` files are tracked.
+- Never commit credentials. They live in `/web/.env` on the host and are read at runtime by signcollect-lib; `db_credentials.py` (tools) and `../mysql_config.php` are outside version control, and only the `.example` files are tracked.
 
 ## Database (`admin_gebarenoverleg`, shared)
 
-Structure in `db/schema.sql`. Two credential mechanisms coexist: `db_credentials.php`/`.py` (api.php, tools) and `../mysql_config.php` (getZinnen.php, getMT.php, getGlossVideo.php, syncEafToDatabase.php). Don't add a third.
+Structure in `db/schema.sql`. PHP endpoints get their credentials from `db_config.php`, which loads signcollect-lib (`/web/lib`) and exposes both shapes this repo already used — `$db_config[...]` and `DB_HOST`/`DB_USER`/`DB_PASS`/`DB_NAME` — from the one source, `/web/.env`. The `../mysql_config.php` includes (getZinnen.php, getMT.php, getGlossVideo.php, segment_api.php, syncEafToDatabase.php) are unmigrated and still work: on a migrated host that file is a shim over the same source. `tools/` still imports `db_credentials.py`. Don't add a fourth — new endpoints require `db_config.php`.
 
 - `hh_index` — one row per thuisarts.nl **topic** (~3,485), not per sentence; `total_items` counts topics.
 - `hh_sentences`, `hh_words`, `hh_lemma`, `hh_index_glos` — NLP tables filled by `tools/`.

@@ -61,10 +61,14 @@ Not tracked (but needed on the server): `OpenDutchWordnet/` (third-party package
 git clone git@github.com:Amsterdam-Humanities-Labs/signlab_hh.git /web/hh
 cd /web/hh
 
-# 1. Database credentials — two mechanisms, both gitignored:
-cp db_credentials.example.php db_credentials.php   # used by api.php, getGlosses.php, get_begrippen.php, save_subtitle.php
-cp db_credentials.example.py  db_credentials.py    # used by tools/
-#    getZinnen.php, getMT.php, getGlossVideo.php, syncEafToDatabase.php include ../mysql_config.php (one level above the docroot)
+# 1. Database credentials. The PHP endpoints read them through
+#    signcollect-lib: db_config.php resolves ../lib (i.e. /web/lib) or
+#    /web/lib and takes host/user/password/database from /web/.env. Nothing
+#    to copy here — deploy signlab_signcollect-lib and write /web/.env.
+#    getZinnen.php, getMT.php, getGlossVideo.php, segment_api.php and
+#    syncEafToDatabase.php still include ../mysql_config.php, which on a
+#    migrated host is a shim over the same source.
+cp db_credentials.example.py db_credentials.py     # tools/ only; still gitignored
 
 # 2. Tables (structure only; data comes from the pipeline or from production)
 mysql -u user -p admin_gebarenoverleg < db/schema.sql
@@ -73,7 +77,8 @@ mysql -u user -p admin_gebarenoverleg < db/schema.sql
 mkdir -p cache eaf subtitles && chown www-data cache eaf subtitles
 
 # 4. API token for the external segmentation service (segment_api.php):
-#    set HH_API_TOKEN in db_credentials.php and configure the client to send X-Api-Token.
+#    put HH_API_TOKEN in db_credentials.php (gitignored, optional, loaded by
+#    db_config.php when present) and configure the client to send X-Api-Token.
 #    Until it is set, segment_api.php accepts unauthenticated calls and logs a warning.
 
 # 5. WordNet (only for tools/nlp)

@@ -2,7 +2,7 @@
 require_once __DIR__ . '/auth.php';
 $currentUser = requireAuthApi();   // portal session cookie required
 
-require_once __DIR__ . '/db_credentials.php';
+require_once __DIR__ . '/db_config.php';   // DB_* constants, from /web/.env via signcollect-lib
 /**
  * Save subtitle timing data
  * This script receives timing data for each line displayed in the autocue
@@ -12,11 +12,7 @@ require_once __DIR__ . '/db_credentials.php';
 // Define constants
 define('LOG_FILE', 'subtitle_timings.log');
 
-// Database configuration
-define('DB_HOST', 'localhost');
-define('DB_USER', 'user');  // Replace with your database username
-define('DB_PASS', DB_PASSWORD);      // Replace with your database password
-define('DB_NAME', 'admin_gebarenoverleg');  // Replace with your database name
+// DB_HOST / DB_USER / DB_PASS / DB_NAME are defined by db_config.php.
 
 // Ensure we have POST data
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

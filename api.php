@@ -2,17 +2,11 @@
 require_once __DIR__ . '/auth.php';
 $currentUser = requireAuthApi();   // portal session cookie required
 
-require_once __DIR__ . '/db_credentials.php';
+require_once __DIR__ . '/db_config.php';   // $db_config, from /web/.env via signcollect-lib
 // api.php
 //disable php warnings
 error_reporting(E_ERROR | E_PARSE);
-// MySQL connection details
-$db_config = [
-  'host'     => 'localhost',
-  'user'     => 'user',
-  'password' => DB_PASSWORD,
-  'database' => 'admin_gebarenoverleg'
-];
+// MySQL connection details - all four come from db_config.php.
 
 $conn = new mysqli($db_config['host'], $db_config['user'], $db_config['password'], $db_config['database']);
 if ($conn->connect_error) {
