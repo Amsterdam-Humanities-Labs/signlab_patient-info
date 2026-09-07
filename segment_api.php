@@ -1,4 +1,9 @@
 <?php
+
+// signcollect-lib's install-root resolver: sc_path(), sc_dir(), sc_root().
+// Vendored shim - it finds /web/lib/paths.php, or falls back to /web.
+require_once __DIR__ . '/sc_paths.php';
+
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
@@ -119,7 +124,7 @@ function uploadSegments($conn) {
         return;
     }
 
-    $saveDir = '/web/gebarenoverleg_media/studioFilesMini/post/';
+    $saveDir = sc_dir('media_post');
     if (!is_dir($saveDir)) {
         echo json_encode(['success' => false, 'error' => 'Save directory does not exist']);
         return;

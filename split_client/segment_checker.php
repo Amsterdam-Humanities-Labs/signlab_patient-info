@@ -1,4 +1,9 @@
 <?php require_once __DIR__ . '/../auth.php'; requireAuth(); ?>
+
+// signcollect-lib's install-root resolver: sc_path(), sc_dir(), sc_root().
+// Vendored shim - it finds /web/lib/paths.php, or falls back to /web.
+require_once __DIR__ . '/../sc_paths.php';
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -311,7 +316,7 @@
 <body>
 <?php
 $videoName = isset($_GET['video']) ? $_GET['video'] : null;
-$videoDir = '/web/gebarenoverleg_media/studioFilesMini/post/';
+$videoDir = sc_dir('media_post');
 $webPath = '/gebarenoverleg_media/studioFilesMini/post/';
 $jsonDir = __DIR__ . '/output/';
 
