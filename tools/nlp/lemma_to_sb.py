@@ -1,3 +1,4 @@
+import os
 import sys as _sys
 from pathlib import Path as _Path
 ROOT = _Path(__file__).resolve().parents[2]   # repository root (/web/hh)
@@ -18,7 +19,12 @@ db_config = {
 }
 
 # Load JSON file and build a mapping from glosses and senses
-input_file = "/web/glosses_transformed.json"
+# The Signbank dump lives in the connector's directory, which is where it is
+# rebuilt. The docroot-root path is the pre-connector layout, kept as a
+# fallback so this still runs on a host that has not moved it.
+_CANDIDATES = ("/web/signbank_data/glosses_transformed.json",
+               "/web/glosses_transformed.json")
+input_file = next((p for p in _CANDIDATES if os.path.exists(p)), _CANDIDATES[0])
 
 with open(input_file, "r", encoding="utf-8") as f:
     input_data = json.load(f)
