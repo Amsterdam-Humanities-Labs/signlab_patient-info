@@ -45,7 +45,7 @@ Everything the web server serves lives in the repository root, so URLs under `/h
 └── CLAUDE.md           Conventions and gotchas for AI-assisted work
 ```
 
-Not tracked (but needed on the server): `OpenDutchWordnet/` (third-party package, see below), `odwn/` (WordNet XML), `glosses_transformed.json` (Signbank export, also at `/web/glosses_transformed.json`), `eaf/` (annotation files written by the editor), `cache/`, `split_client/output/`.
+Not tracked (but needed on the server): `OpenDutchWordnet/` (third-party package, see below), `odwn/` (WordNet XML), `glosses_transformed.json` (Signbank export, rebuilt by the connector at `/web/signbank_data/glosses_transformed.json`), `eaf/` (annotation files written by the editor), `cache/`, `split_client/output/`.
 
 ## Requirements
 
