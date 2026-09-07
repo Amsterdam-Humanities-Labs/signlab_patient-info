@@ -1,5 +1,13 @@
 <?php
-define("DB_PASSWORD", "your_password_here");
+// db_credentials.php is now optional and holds no database credentials.
+//
+// Those come from /web/.env through signcollect-lib; db_config.php is what
+// endpoints require, and it exposes both $db_config[...] and the DB_*
+// constants from that one source. DB_PASSWORD is still defined for anything
+// that has not caught up, but defining it here as well only shadows the real
+// one and is not what you want.
+//
+// What is still worth putting in this file, if a host needs it:
 
 // Shared secret for machine clients of segment_api.php (external segmentation
 // service). Send as `X-Api-Token: <token>` or `Authorization: Bearer <token>`.
