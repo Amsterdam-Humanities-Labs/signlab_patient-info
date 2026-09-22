@@ -226,7 +226,7 @@ const VideoDrawer = function({ lemma, video, origin, isOpen, contentId, plainTex
 
       console.log(formData)
       
-      const response = await fetch('https://signcollect.nl/batch_add.php', {
+      const response = await fetch('/menu_beta/batch_add.php', {
         method: 'POST',
         body: formData
       });

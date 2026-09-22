@@ -494,7 +494,7 @@
           formData.append('labels', JSON.stringify(['TYDbase', 'HealthHolland']));
           console.log("formData", formData);
 
-          const formDataResponse = await fetch('https://signcollect.nl/batch_add.php', {
+          const formDataResponse = await fetch('/menu_beta/batch_add.php', {
             method: 'POST',
             body: formData
           });
