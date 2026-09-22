@@ -1342,6 +1342,9 @@ switch ($action) {
         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($postFields));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Use cautiously, consider proper verification
+        // batch_add.php requires a session: pass on the caller's (already
+        // verified, see requireAuthApi above) sessionObject cookie.
+        curl_setopt($ch, CURLOPT_COOKIE, 'sessionObject=' . rawurlencode($_COOKIE['sessionObject'] ?? ''));
         curl_setopt($ch, CURLOPT_TIMEOUT, 10); // Add a timeout
 
         $signbankResponse = curl_exec($ch);
