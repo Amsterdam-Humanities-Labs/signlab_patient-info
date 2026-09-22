@@ -1322,8 +1322,11 @@ switch ($action) {
            continue;
         }
 
-        // Use cURL to call the external batch_add.php script
-        $signbankUrl = 'https://signcollect.nl/batch_add.php';
+        // Call signCollect-v2's batch_add.php on this same host. cURL needs an
+        // absolute URL, so build it from the current request.
+        $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+        $signbankUrl = ($https ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/menu_beta/batch_add.php';
         $postFields = [
             'wordList' => $term, // Send the raw term, not escaped
             'thema' => $thema,   // Send the raw thema
