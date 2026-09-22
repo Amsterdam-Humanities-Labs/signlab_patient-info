@@ -27,6 +27,7 @@ mkdir -p cache eaf subtitles && chown www-data cache eaf subtitles
 | File | Where | Used by |
 |---|---|---|
 | `/web/.env` | install root | DB credentials, read via signcollect-lib (`db_config.php`) |
+| `SC_LEGACY_WEB_ROOT`, `SC_LEGACY_BASE_URL` | env or `/web/.env`, optional | `getMT.php`: SRT paths under the first (default `/var/www/html`) become URLs under the second (default `https://leffe.science.uva.nl:8043`) |
 | `../mysql_config.php` | one level ABOVE this dir | `getZinnen.php`, `getMT.php`, `segment_api.php`, `syncEafToDatabase.php`, `auth.php` |
 | `db_credentials.php` | here, gitignored, optional | `HH_API_TOKEN` for `segment_api.php` (unset = open + warning). Stub: `db_credentials.example.php` |
 | `cache/`, `eaf/`, `subtitles/` | here, gitignored | runtime output, writable by `www-data` |
