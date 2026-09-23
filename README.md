@@ -31,7 +31,6 @@ mkdir -p cache eaf && chown www-data cache eaf
 | File | Where | Used by |
 |---|---|---|
 | `/web/.env` | install root | DB credentials, read through signcollect-lib (`db_config.php`) |
-| `SC_LEGACY_WEB_ROOT`, `SC_LEGACY_BASE_URL` | env or `/web/.env`, optional | `getMT.php` turns SRT paths under the first (default `/var/www/html`) into URLs under the second (default `https://leffe.science.uva.nl:8043`) |
 | `../mysql_config.php` | one level above this directory | `getZinnen.php`, `getMT.php`, `segment_api.php`, `syncEafToDatabase.php`, `auth.php` |
 | `db_credentials.php` | here, gitignored, optional | `HH_API_TOKEN` for `segment_api.php`. Unset means open, with a warning. Template: `db_credentials.example.php` |
 | `cache/`, `eaf/` | here, gitignored | runtime output (`getZinnen.php`), writable by `www-data` |
