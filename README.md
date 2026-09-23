@@ -1,4 +1,4 @@
-# signlab_hh
+# signlab_patient-info
 Dutch patient-information texts (thuisarts.nl, apotheek.nl), linked to NGT recordings.
 
 ## What it does
@@ -20,7 +20,7 @@ Dormant but deployed. The stack's tests expect `api.php`, `getGlosses.php` and `
 
 ## How to run / deploy
 There is no build step. The default branch is `master`.
-The stack deploys it (`repos.tsv` line `hh	signlab_hh	master`); see
+The stack deploys it (`repos.tsv` line `hh	signlab_patient-info	master`); see
 [signlab_signcollect-stack](https://github.com/Amsterdam-Humanities-Labs/signlab_signcollect-stack).
 ```bash
 mysql -u user -p admin_gebarenoverleg < db/schema.sql   # structure only
