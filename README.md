@@ -3,7 +3,7 @@ Dutch patient-information texts (thuisarts.nl, apotheek.nl), linked to NGT recor
 
 ## What it does
 - Browse pages for topics, sentences, words and the glossary: `index.html`, `contents.html`, `words.html`, `sentences.html`, `begrippenlijst.html`.
-- More pages: `ngt_comparison.html` (reads `data/ngt_comparison_results.json` through `api.php`), `action_stats.html`, `autocue2.html`, `content-selector.html`.
+- More pages: `ngt_comparison.html` (reads `data/ngt_comparison_results.json` through `api.php`), `action_stats.html`, `autocue.html`, `content-selector.html`.
 - `overview_hh.html` shows which topics have video, segments and annotations. Its editor button opens `/annotation-editors/subBeta8/zin/subBeta8.html`.
 - JSON endpoints, all behind `auth.php`: `api.php`, `getZinnen.php`, `segment_api.php` (for an external segmentation service), `getMT.php`, `getGlosses.php`, `get_begrippen.php`, `save_subtitle.php`.
 - New glosses go to `/menu_beta/batch_add.php` in [signlab_signCollect-v2](https://github.com/Amsterdam-Humanities-Labs/signlab_signCollect-v2).

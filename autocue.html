@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autocue Tool</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #000;
+      color: #fff;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+    
+    #autocue-container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+     /* transform: scaleX(-1); Mirror the entire container */
+    }
+    
+    #text-container {
+      width: 100%;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+      border: 1px solid #333;
+    }
+    
+    #text-content {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      font-size: 10rem;
+      line-height: 1.5;
+      transition: transform 0.5s ease;
+      padding: 20px;
+      color: #ffffff; /* Bright white for better contrast */
+      text-shadow: 0 0 2px rgba(0, 0, 0, 0.8); /* Add shadow for better readability */
+    }
+    
+    .line {
+      margin-bottom: 1.5rem;
+    }
+    
+    .active-line {
+      background-color: rgba(255, 255, 255, 0.15); /* Slightly more visible background */
+      color: #00ff66; /* Brighter green for better contrast */
+      text-shadow: 0 0 4px rgba(0, 255, 102, 0.5); /* Add glow effect to active line */
+      font-weight: bold; /* Make active text bold for additional contrast */
+    }
+    
+    .control-panel {
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      border-radius: 5px;
+      margin-top: 20px;
+      /* transform: scaleX(-1); Un-mirror the control panel text */
+    }
+    
+    .scroll-speed {
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+    
+    .center-marker {
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      background-color: rgba(255, 0, 0, 0.5);
+      top: 50%;
+      left: 0;
+      z-index: 100;
+      display: none; /* Hide the center marker in the new approach */
+    }
+    
+    /* Add indicator to show when a line is about to be displayed */
+    .line-approaching {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Style for the current active line in scroll mode */
+    .scroll-active-line {
+      color: #00ff66;
+      background-color: rgba(255, 255, 255, 0.15);
+      text-shadow: 0 0 4px rgba(0, 255, 102, 0.5);
+      font-weight: bold;
+    }
+    
+    /* Style for upcoming lines in scroll mode */
+    .upcoming-line {
+      opacity: 0.7;
+    }
+    
+    /* Style for past lines in scroll mode */
+    .past-line {
+      opacity: 0.3;
+    }
+    
+    .mode-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      transform: scaleX(-1); /* Un-mirror the mode badge */
+    }
+    
+    .recording-indicator {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      transform: scaleX(-1); /* Un-mirror the recording indicator */
+      color: #ff0000;
+      font-size: 1.5rem;
+      font-weight: bold;
+      animation: blink 1.5s infinite;
+      display: none;
+    }
+    
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    
+    .font-controls {
+      margin-top: 10px;
+    }
+    
+    .font-size-btn {
+      margin: 0 5px;
+    }
+    
+    .hide-controls-btn {
+      margin-left: 15px;
+    }
+    
+    .fullscreen-text {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1000;
+      background-color: #000;
+    }
+    
+    .show-controls-btn {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      z-index: 1001;
+      /* transform: scaleX(-1); */
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="autocue-container">
+    <div class="recording-indicator" id="recording-indicator">
+      ⚫ RECORDING
+    </div>
+    
+    <div class="mode-badge">
+      <span id="mode-indicator" class="badge bg-primary">Scroll Mode</span>
+    </div>
+    
+    <div id="text-container">
+      <div class="center-marker"></div>
+      <div id="text-content"></div>
+    </div>
+    
+    <div class="control-panel" id="control-panel">
+      <div class="row">
+        <div class="col-md-4">
+          <p>Mode: <span id="current-mode">Scroll Mode</span></p>
+          <div class="d-flex align-items-center">
+            <button id="toggle-mode-btn" class="btn btn-sm btn-primary me-2">Toggle Mode (M)</button>
+            <span id="status-indicator" class="badge bg-secondary">Disconnected</span>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div id="scroll-controls">
+            <p>Scroll Speed: <span id="scroll-speed" class="scroll-speed">5</span></p>
+            <div class="btn-group">
+              <button id="slower-btn" class="btn btn-sm btn-outline-light">Slower (A)</button>
+              <button id="faster-btn" class="btn btn-sm btn-outline-light">Faster (B)</button>
+              <button id="toggle-scroll-btn" class="btn btn-sm btn-success ms-2">Start (Space)</button>
+            </div>
+          </div>
+          
+          <div id="line-controls" style="display: none;">
+            <p>Current Line: <span id="current-line">1</span> / <span id="total-lines">0</span></p>
+            <div class="btn-group">
+              <button id="prev-line-btn" class="btn btn-sm btn-outline-light">Prev Line (B)</button>
+              <button id="next-line-btn" class="btn btn-sm btn-outline-light">Next Line (A)</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-md-4">
+          <div class="d-flex justify-content-between">
+            <div class="font-controls">
+              <p>Font Size:</p>
+              <div class="btn-group">
+                <button id="decrease-font-btn" class="btn btn-sm btn-outline-light font-size-btn">A-</button>
+                <button id="increase-font-btn" class="btn btn-sm btn-outline-light font-size-btn">A+</button>
+              </div>
+            </div>
+            
+            <div class="d-flex align-items-end">
+              <button id="reset-btn" class="btn btn-sm btn-warning me-2">Reset (C)</button>
+              <button id="hide-controls-btn" class="btn btn-sm btn-outline-light hide-controls-btn">Hide Controls</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <button class="btn btn-sm btn-outline-light show-controls-btn" id="show-controls-btn">Show Controls</button>
+  
+  <!-- Modal for notifications -->
+  <div class="modal fade" id="qrDesktopModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-dark">Waiting for QR Desktop</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-dark">
+          <p>Waiting for QR Desktop application to connect...</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Global variables
+    let ws;
+    let contentId = null;
+    let textLines = [];
+    let scrollSpeed = 8; // Default scroll speed set to middle of new range (1-20)
+    let scrollInterval = null;
+    let currentMode = 'scroll'; // 'scroll' or 'line'
+    let currentLineIndex = 0;
+    let isScrolling = false;
+    let isRecording = false;
+    let currentFontSize = 10; // rem
+    let currentTakeId = null; // Track the current take ID
+    
+    // Track animation progress variables for dynamic speed changes
+    let startTime = 0;
+    let pauseTime = 0;
+    let pausePosition = 0;
+    let contentHeight = 0;
+    let containerHeight = 0;
+    let startPosition = 0;
+    let endPosition = 0;
+    let totalScrollDistance = 0;
+    
+    // Track which lines have been displayed in the middle
+    let displayedLines = {};
+    let lastCenteredLine = -1;
+    
+    // Connect to WebSocket server
+    function connect() {
+      ws = new WebSocket('wss://signcollect.nl/studioSupport/');
+
+      ws.onopen = () => {
+        console.log('Connected to server.');
+        ws.send(JSON.stringify({ glosId: '9999', selectedType: 'none', status: 'hello' }));
+        $('#status-indicator').text('Connected').removeClass('bg-secondary').addClass('bg-success');
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        $('#status-indicator').text('Error').removeClass('bg-secondary bg-success').addClass('bg-danger');
+      };
+
+      ws.onclose = () => {
+        console.log('Disconnected from server. Attempting to reconnect...');
+        $('#status-indicator').text('Reconnecting...').removeClass('bg-success bg-danger').addClass('bg-warning');
+        setTimeout(connect, 1000);
+      };
+      
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log('Message received:', data);
+        
+        if (data.callback === 'callback') {
+          //we are going to hide modal window that consist of message: waiting for qR desktop
+          setTimeout(() => {
+            $("#qrDesktopModal").modal('hide');
+          }, 1000);
+        } else if (data.selectedType === 'text_start') {
+          contentId = data.glosId;
+          
+          if (data.status === 'start') {
+            // Fetch content and start autocue
+            // fetchContent(contentId);
+            // $('#status-indicator').text('Started').removeClass('bg-secondary bg-warning').addClass('bg-success');
+            
+            // Show recording indicator
+            $('#recording-indicator').show();
+            isRecording = true;
+            
+            // If we received glosId = 8848, automatically start in scroll mode
+              if (currentMode !== 'scroll') {
+                toggleMode(); // Switch to scroll mode if we're not already in it
+              }
+              setTimeout(() => {
+                startScrolling();
+              }, 1000);              
+
+            } else if (data.status === 'stop') {
+            // Stop autocue
+            stopScrolling();
+            $('#status-indicator').text('Stopped').removeClass('bg-success bg-warning').addClass('bg-secondary');
+            
+            // Hide recording indicator
+            $('#recording-indicator').hide();
+            isRecording = false;
+          }
+        } else if (data.selectedType === 'show_text') {
+          // Handle showing text directly from WebSocket message
+          if (data.status && typeof data.status === 'object' && data.status.text) {
+            // Set the text content directly
+            const textContent = data.status.text;
+            const textTitle = data.status.title || '';
+            
+            // Split text into lines
+            textLines = textContent.split(/(?<=[.?:])/).filter(line => line.trim() !== '');
+            
+            // Update display
+            $('#text-content').empty();
+            textLines.forEach((line, index) => {
+              $('#text-content').append(`<div class="line" data-index="${index}">${line}</div>`);
+            });
+            
+            $('#total-lines').text(textLines.length);
+            
+            // Show title if available
+            if (textTitle) {
+              $('#status-indicator').text('Showing: ' + textTitle).removeClass('bg-secondary bg-warning').addClass('bg-info');
+            } else {
+              $('#status-indicator').text('Text Loaded').removeClass('bg-secondary bg-warning').addClass('bg-info');
+            }
+            
+            resetAutocue();
+          }
+        }
+      };
+    }
+    
+    function sendStartorStopCapture(glosId, selectedType, status) {
+      console.log(glosId, status, selectedType);
+      const message = JSON.stringify({ glosId: glosId, selectedType: selectedType, status: status });
+      ws.send(message);
+    }
+    
+    // Fetch content from the API
+    function fetchContent(id) {
+      $.ajax({
+        url: 'api.php',
+        method: 'GET',
+        data: {
+          action: 'get_content_ngt_text',
+          id: id
+        },
+        success: function(response) {
+          if (response.ngt_text) {
+            // Split text into lines
+            textLines = response.ngt_text.split('\n').filter(line => line.trim() !== '');
+            
+            // Update display
+            $('#text-content').empty();
+            textLines.forEach((line, index) => {
+              $('#text-content').append(`<div class="line" data-index="${index}">${line}</div>`);
+            });
+            
+            $('#total-lines').text(textLines.length);
+            resetAutocue();
+          } else if (response.error) {
+            console.error('Error fetching content:', response.error);
+            $('#status-indicator').text('Error: ' + response.error).removeClass('bg-secondary bg-success').addClass('bg-danger');
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('AJAX error:', error);
+          $('#status-indicator').text('Error: ' + error).removeClass('bg-secondary bg-success').addClass('bg-danger');
+        }
+      });
+    }
+    
+    // Start scrolling text - new approach line by line
+    function startScrolling() {
+      if (isScrolling) return;
+      
+      isScrolling = true;
+      
+      // Generate a new take ID for this session
+      currentTakeId = generateTakeId();
+      console.log("Starting new take with ID:", currentTakeId);
+      
+      // Update UI
+      $('#toggle-scroll-btn').text('Stop (Space)').removeClass('btn-success').addClass('btn-danger');
+      
+      // Reset line tracking
+      displayedLines = {};
+      lastCenteredLine = -1;
+      
+      // Reset current line index and start from the first line
+      currentLineIndex = 0;
+      
+      // Update display to show first line
+      updateScrollPosition();
+      
+      // Set start time
+      startTime = Date.now();
+      
+      // Schedule the next line advancement
+      scheduleNextLine();
+    }
+    
+    // Schedule advancement to the next line
+    function scheduleNextLine() {
+      // Clear any existing interval/timeout to prevent multiple timers
+      if (scrollInterval) {
+        clearTimeout(scrollInterval);
+        scrollInterval = null;
+      }
+      
+      // Only schedule if we're still scrolling and not at the end
+      if (isScrolling && currentLineIndex < textLines.length - 1) {
+        scrollInterval = setTimeout(() => {
+          // Advance to next line
+          currentLineIndex++;
+          updateScrollPosition();
+          
+          // Schedule the next line
+          scheduleNextLine();
+        }, scrollSpeedToTime(scrollSpeed));
+      } else if (isScrolling && currentLineIndex >= textLines.length - 1) {
+        // We've reached the end of the text
+        console.log("Reached end of text");
+        
+        // If the last line hasn't been processed yet, give it time to be shown
+        const lastLineDelay = scrollSpeedToTime(scrollSpeed);
+        setTimeout(() => {
+          stopScrolling();
+        }, lastLineDelay);
+      }
+    }
+    
+    // Calculate time between lines based on scroll speed
+    function scrollSpeedToTime(speed) {
+      // Map speed (1-20) to time (5000ms-500ms)
+      return 5500 - (speed * 250);
+    }
+    
+    // Update scroll position to show current line in new approach
+    function updateScrollPosition() {
+      // Update the UI with current line number
+      $('#current-line').text(currentLineIndex + 1);
+      
+      // Get the current line element
+      const lineElement = $(`.line[data-index="${currentLineIndex}"]`);
+      if (!lineElement.length) return;
+      
+      // Remove all special classes
+      $('.line').removeClass('scroll-active-line upcoming-line past-line');
+      
+      // Add appropriate classes to lines relative to current line
+      $(`.line`).each(function() {
+        const index = parseInt($(this).data('index'));
+        if (index === currentLineIndex) {
+          $(this).addClass('scroll-active-line');
+          
+          // Record timing data for the current line
+          const lineText = $(this).text();
+          const timestamp = new Date().toISOString();
+          
+          // If this is a new line being displayed
+          if (lastCenteredLine !== currentLineIndex) {
+            // If previous line exists, mark it as complete
+            if (lastCenteredLine !== -1 && displayedLines[lastCenteredLine]) {
+              displayedLines[lastCenteredLine].endTime = timestamp;
+              console.log(`Line exited center [${lastCenteredLine}] at ${timestamp}: "${displayedLines[lastCenteredLine].text}"`);
+              
+              // Send completed line data to server
+              if (lastCenteredLine >= 0) {
+                sendLineDataToServer(lastCenteredLine);
+              }
+            }
+            
+            // Record start time for current line
+            displayedLines[currentLineIndex] = {
+              startTime: timestamp,
+              endTime: null,
+              text: lineText
+            };
+            console.log(`Line entered center [${currentLineIndex}] at ${timestamp}: "${lineText}"`);
+            
+            lastCenteredLine = currentLineIndex;
+          }
+          
+        } else if (index < currentLineIndex) {
+          $(this).addClass('past-line');
+        } else {
+          $(this).addClass('upcoming-line');
+        }
+      });
+      
+      // Scroll to position the current line in the center of the screen
+      const containerHeight = $('#text-container').height();
+      const linePos = lineElement.position().top;
+      const offset = linePos - (containerHeight / 2) + (lineElement.height() / 2);
+      
+      // Apply smooth scroll animation
+      $('#text-content').css({
+        'transform': `translateY(${-offset}px)`,
+        'transition': 'transform 0.5s ease-out'
+      });
+    }
+    
+    // Stop scrolling
+    function stopScrolling() {
+      if (scrollInterval) {
+        clearTimeout(scrollInterval);
+        scrollInterval = null;
+      }
+      
+      if (isScrolling) {
+        // Update UI
+        $('#toggle-scroll-btn').text('Start (Space)').removeClass('btn-danger').addClass('btn-success');
+        isScrolling = false;
+      }
+    }
+    
+    // Function to send line data to server
+    function sendLineDataToServer(lineIndex) {
+      if (displayedLines[lineIndex] && displayedLines[lineIndex].startTime && displayedLines[lineIndex].endTime) {
+        const lineData = {
+          index: lineIndex,
+          text: displayedLines[lineIndex].text,
+          startTime: displayedLines[lineIndex].startTime,
+          endTime: displayedLines[lineIndex].endTime,
+          contentId: contentId || 'unknown',
+          mode: currentMode,
+          take: currentTakeId // Add take ID to identify related subtitles
+        };
+        
+        $.ajax({
+          url: 'save_subtitle.php',
+          method: 'POST',
+          data: lineData,
+          success: function(response) {
+            console.log(`Line ${lineIndex} timing data saved to server:`, response);
+          },
+          error: function(xhr, status, error) {
+            console.error(`Error saving line ${lineIndex} timing data:`, error);
+          }
+        });
+      }
+    }
+    
+    // Reset autocue to starting position
+    function resetAutocue() {
+      stopScrolling();
+      
+      // Generate a new take ID when resetting
+      currentTakeId = null;
+      
+      // Reset line tracking
+      displayedLines = {};
+      lastCenteredLine = -1;
+      
+      // Remove all highlighting
+      $('.line').removeClass('scroll-active-line upcoming-line past-line');
+      
+      if (currentMode === 'scroll') {
+        currentLineIndex = 0;
+        // Position the first line ready to start
+        const firstLine = $('.line[data-index="0"]');
+        if (firstLine.length) {
+          const containerHeight = $('#text-container').height();
+          const linePos = firstLine.position().top;
+          const offset = linePos - (containerHeight / 2) + (firstLine.height() / 2);
+          
+          // Apply immediate positioning without animation
+          $('#text-content').css({
+            'transform': `translateY(${-offset}px)`,
+            'transition': 'none'
+          });
+          
+          // Force browser to apply the non-transition first, then restore transition
+          setTimeout(() => {
+            $('#text-content').css('transition', 'transform 0.5s ease-out');
+          }, 50);
+        } else {
+          $('#text-content').css('transform', 'translateY(0)');
+        }
+      } else {
+        currentLineIndex = 0;
+        updateActiveLine();
+      }
+      
+      $('#current-line').text(currentLineIndex + 1);
+    }
+    
+    // Update the active line in line mode
+    function updateActiveLine() {
+      $('.line').removeClass('active-line');
+      $(`.line[data-index="${currentLineIndex}"]`).addClass('active-line');
+      
+      // Scroll to make active line visible in the middle
+      const lineElement = $(`.line[data-index="${currentLineIndex}"]`);
+      if (lineElement.length > 0) {
+        const linePos = lineElement.position().top;
+        const containerHeight = $('#text-container').height();
+        const textContent = $('#text-content');
+        const offset = linePos - (containerHeight / 2) + (lineElement.height() / 2);
+        
+        textContent.css('transform', `translateY(${-offset}px)`);
+        
+        // Log when line becomes active in line mode
+        const lineText = lineElement.text();
+        const timestamp = new Date().toISOString();
+        
+        // Log previous line as complete if exists
+        if (lastCenteredLine !== -1 && displayedLines[lastCenteredLine] && lastCenteredLine !== currentLineIndex) {
+          displayedLines[lastCenteredLine].endTime = timestamp;
+          console.log(`Line exited center [${lastCenteredLine}] at ${timestamp}: "${displayedLines[lastCenteredLine].text}"`);
+          
+          // Send completed line data to PHP file
+          sendLineDataToServer(lastCenteredLine);
+        }
+        
+        // Log current line
+        if (!displayedLines[currentLineIndex]) {
+          displayedLines[currentLineIndex] = {
+            startTime: timestamp,
+            endTime: null,
+            text: lineText
+          };
+          console.log(`Line entered center [${currentLineIndex}] at ${timestamp}: "${lineText}"`);
+        }
+        
+        lastCenteredLine = currentLineIndex;
+      }
+      
+      $('#current-line').text(currentLineIndex + 1);
+    }
+    
+    // Switch between scroll mode and line mode
+    function toggleMode() {
+      currentMode = currentMode === 'scroll' ? 'line' : 'scroll';
+      
+      $('#current-mode').text(currentMode === 'scroll' ? 'Scroll Mode' : 'Line Mode');
+      $('#mode-indicator').text(currentMode === 'scroll' ? 'Scroll Mode' : 'Line Mode');
+      
+      // Update UI based on mode
+      if (currentMode === 'scroll') {
+        $('#scroll-controls').show();
+        $('#line-controls').hide();
+      } else {
+        $('#scroll-controls').hide();
+        $('#line-controls').show();
+      }
+      
+      resetAutocue();
+    }
+    
+    // Change font size
+    function changeFontSize(delta) {
+      currentFontSize += delta;
+      // Limit font size between 1 and 5 rem
+      currentFontSize = Math.max(1, Math.min(10, currentFontSize));
+      $('#text-content').css('font-size', currentFontSize + 'rem');
+    }
+    
+    // Toggle controls visibility
+    function toggleControlsVisibility() {
+      if ($('#control-panel').is(':visible')) {
+        // Hide controls
+        $('#control-panel').hide();
+        $('#mode-indicator').hide();
+        $('#text-container').addClass('fullscreen-text');
+        $('#show-controls-btn').show();
+      } else {
+        // Show controls
+        $('#control-panel').show();
+        $('#mode-indicator').show();
+        $('#text-container').removeClass('fullscreen-text');
+        $('#show-controls-btn').hide();
+      }
+    }
+    
+    // Adjust scroll speed and update scrolling if active
+    function adjustScrollSpeed(delta) {
+      scrollSpeed = Math.max(1, Math.min(20, scrollSpeed + delta));
+      $('#scroll-speed').text(scrollSpeed);
+      
+      // If currently scrolling, reschedule with new speed
+      if (isScrolling) {
+        // Clear current schedule
+        if (scrollInterval) {
+          clearTimeout(scrollInterval);
+          scrollInterval = null;
+        }
+        
+        // Schedule next line with new timing
+        scheduleNextLine();
+      }
+    }
+    
+    // Initialize the application
+    $(document).ready(function() {
+      // Connect to WebSocket
+      connect();
+      
+      // Initialize modal
+      $("#qrDesktopModal").modal('show');
+      
+      // Update UI based on current mode
+      function updateModeUI() {
+        if (currentMode === 'scroll') {
+          $('#scroll-controls').show();
+          $('#line-controls').hide();
+        } else {
+          $('#scroll-controls').hide();
+          $('#line-controls').show();
+        }
+      }
+      
+      // Mode toggle button
+      $('#toggle-mode-btn').click(function() {
+        toggleMode();
+        updateModeUI();
+      });
+      
+      // Reset button
+      $('#reset-btn').click(function() {
+        resetAutocue();
+      });
+      
+      // Scroll speed buttons
+      $('#slower-btn').click(function() {
+        adjustScrollSpeed(-1);
+      });
+      
+      $('#faster-btn').click(function() {
+        adjustScrollSpeed(1);
+      });
+      
+      // Toggle scroll button
+      $('#toggle-scroll-btn').click(function() {
+        if (isScrolling) {
+          stopScrolling();
+        } else {
+          startScrolling();
+        }
+      });
+      
+      // Add manual navigation buttons for scroll mode too
+      $('#next-line-btn').click(function() {
+        if (currentLineIndex < textLines.length - 1) {
+          currentLineIndex++;
+          if (currentMode === 'scroll') {
+            updateScrollPosition();
+          } else {
+            updateActiveLine();
+          }
+        }
+      });
+      
+      $('#prev-line-btn').click(function() {
+        if (currentLineIndex > 0) {
+          currentLineIndex--;
+          if (currentMode === 'scroll') {
+            updateScrollPosition();
+          } else {
+            updateActiveLine();
+          }
+        }
+      });
+      
+      // Font size buttons
+      $('#increase-font-btn').click(function() {
+        changeFontSize(0.25);
+      });
+      
+      $('#decrease-font-btn').click(function() {
+        changeFontSize(-0.25);
+      });
+      
+      // Hide/Show controls buttons
+      $('#hide-controls-btn').click(function() {
+        toggleControlsVisibility();
+      });
+      
+      $('#show-controls-btn').click(function() {
+        toggleControlsVisibility();
+      });
+      
+      // Initialize UI based on current mode
+      updateModeUI();
+      
+      // Keyboard event handlers
+      $(document).keydown(function(e) {
+        const key = e.key.toLowerCase();
+        
+        // Toggle mode with 'm' key
+        if (key === 'm') {
+          toggleMode();
+          return;
+        }
+        
+        if (currentMode === 'scroll') {
+          // Scroll mode controls
+          switch(key) {
+            case 'a':
+              // Slower
+              adjustScrollSpeed(-1);
+              break;
+              
+            case 'b':
+              // Faster
+              adjustScrollSpeed(1);
+              break;
+              
+            case 'c':
+              // Reset
+              resetAutocue();
+              break;
+              
+            case ' ':  // Spacebar
+              // Toggle start/stop
+              if (isScrolling) {
+                stopScrolling();
+              } else {
+                startScrolling();
+              }
+              break;
+              
+            // Add manual line navigation in scroll mode
+            case 'arrowdown':
+            case 'arrowright':
+              if (currentLineIndex < textLines.length - 1) {
+                currentLineIndex++;
+                updateScrollPosition();
+              }
+              break;
+              
+            case 'arrowup':
+            case 'arrowleft':
+              if (currentLineIndex > 0) {
+                currentLineIndex--;
+                updateScrollPosition();
+              }
+              break;
+          }
+        } else {
+          // Line mode controls
+          switch(key) {
+            case 'a':
+              // Next line
+              if (currentLineIndex < textLines.length - 1) {
+                currentLineIndex++;
+                updateActiveLine();
+              }
+              break;
+              
+            case 'b':
+              // Previous line
+              if (currentLineIndex > 0) {
+                currentLineIndex--;
+                updateActiveLine();
+              }
+              break;
+              
+            case 'c':
+              // Reset
+              resetAutocue();
+              break;
+          }
+        }
+      });
+    });
+    
+    // Generate a unique take ID using timestamp and content info
+    function generateTakeId() {
+      const timestamp = new Date().toISOString();
+      const randomStr = Math.random().toString(36).substring(2, 10);
+      const sourceStr = `${contentId || 'unknown'}-${timestamp}-${randomStr}-${currentMode}`;
+      
+      // Simple string hash function since we don't have MD5 available directly in browser
+      let hash = 0;
+      for (let i = 0; i < sourceStr.length; i++) {
+        const char = sourceStr.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash; // Convert to 32bit integer
+      }
+      return `take-${Math.abs(hash).toString(16)}-${timestamp.substring(0, 10)}`;
+    }
+  </script>
+</body>
+</html>
