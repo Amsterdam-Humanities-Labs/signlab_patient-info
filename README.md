@@ -42,3 +42,10 @@ mkdir -p cache eaf && chown www-data cache eaf
 - Media: `/web/gebarenoverleg_media/studioFilesMini/{raw,post}/`. Video uploads through `api.php` go to `/web/uploads/`. Signbank export: `/web/signbank_data/glosses_transformed.json`.
 - An external segmentation service polls `segment_api.php`. It is not in any of our repos.
 - Portal session cookie (`/userProtect.js` and `auth.php`).
+
+## License and citation
+
+Apache License 2.0, copyright University of Amsterdam: see [LICENSE](LICENSE) and
+[NOTICE](NOTICE). You may use it, also commercially, as long as you credit
+Gomer Otterspeer / University of Amsterdam as the source. To cite it, use
+[CITATION.cff](CITATION.cff) (the *Cite this repository* button on GitHub) or the DOI [10.21942/uva.33980359](https://doi.org/10.21942/uva.33980359).
